@@ -1,5 +1,6 @@
 package gsutils.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gsutils.core.UserPreferences;
 import org.slf4j.Logger;
@@ -7,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by mspellecacy on 6/11/2016.
@@ -85,7 +88,29 @@ public class PreferencesService {
         }
     }
 
+    //TODO: I handle this poorly, and we end up reading the props file too much. Needs a refactor in to sanity.
+    // Make GameSenseService a singleton? OMGz DEH ANTI-PATTERNS. D: D: D:
+    public String getGameSenseEndpoint() {
+
+        String endpoint = "";
+
+        //Lifted and adapted from: https://github.com/SteelSeries/gamesense-sdk/blob/master/examples/minecraftforge1.8/src/main/java/com/sse3/gamesense/GameSenseMod.java#L137
+        String PRGDATA = System.getenv("PROGRAMDATA");
+        File propsFile = new File( PRGDATA+FILE_SEP+"SteelSeries"+FILE_SEP+"SteelSeries Engine 3"+FILE_SEP+"coreProps.json" );
+
+        try {
+            Map<String, Object> confObj = mapper.readValue(propsFile, new TypeReference<Map<String, Object>>() {});
+            endpoint = (String) confObj.get("address");
+
+        } catch (IOException e) {
+            log.error("Error loading GameSense Config: {}", e.getMessage());
+        }
+
+        return endpoint;
+    }
+
     public void setUserPrefs(UserPreferences userPrefs) {
         this.userPrefs = userPrefs;
     }
 }
+

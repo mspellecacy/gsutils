@@ -1,7 +1,10 @@
 package gsutils.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.sun.xml.internal.stream.Entity;
 import gsutils.gscore.GSBindEvent;
 import gsutils.gscore.GSEventRegistration;
+import gsutils.gscore.GSGameEvent;
 import gsutils.gscore.GSGameRegistration;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -21,6 +24,8 @@ import java.io.IOException;
  */
 public class GameSenseService {
 
+    private static final Logger log = LoggerFactory.getLogger(GameSenseService.class);
+
     public static String GAMESENSE_HOST = "http://127.0.0.1:52083";
 
     public static String GAME_EVENT_PATH = "/game_event";
@@ -32,9 +37,16 @@ public class GameSenseService {
     public static String BIND_GAME_EVENT_PATH = "/bind_game_event";
 
     private ObjectMapper mapper = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(GameSenseService.class);
+    private final PreferencesService prefsService = PreferencesService.getInstance();
 
+
+    //TODO: Refactor in to singleton
     public GameSenseService() {
+
+        GAMESENSE_HOST = "http://"+prefsService.getGameSenseEndpoint();
+        log.info("GameSense Endpoint: " + GAMESENSE_HOST);
+
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
     public GameSenseService(String gameSenseHost) {
@@ -82,7 +94,35 @@ public class GameSenseService {
 
             HttpResponse response = httpClient.execute(post);
 
+            post.releaseConnection();
             log.info("Response Body: "+EntityUtils.toString(response.getEntity()));
+
+            postSuccess = true;
+
+        } catch (Exception ex) {
+            log.error("Error sending game event: "+ex.getMessage());
+        }
+
+        return postSuccess;
+
+    }
+
+    public Boolean sendGameEvent(GSGameEvent gsGameEvent) {
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        Boolean postSuccess = false;
+
+        try {
+            HttpPost post = new HttpPost(GAMESENSE_HOST + GAME_EVENT_PATH);
+            StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsGameEvent));
+            log.info("Event Payload: "+mapper.writeValueAsString(gsGameEvent));
+            post.addHeader("content-type", "application/json");
+            post.setEntity(jsonPayload);
+
+            HttpResponse response = httpClient.execute(post);
+
+            log.info("Response Body: "+EntityUtils.toString(response.getEntity()));
+            //post.releaseConnection();
+            //EntityUtils.consume(response.getEntity());
 
             postSuccess = true;
 
@@ -124,6 +164,7 @@ public class GameSenseService {
         try {
             HttpPost post = new HttpPost(GAMESENSE_HOST + BIND_GAME_EVENT_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(bindEvent));
+            log.info("Bind Event JSON: "+mapper.writeValueAsString(bindEvent));
             post.addHeader("content-type", "application/json");
             post.setEntity(jsonPayload);
 
@@ -131,10 +172,13 @@ public class GameSenseService {
 
             //System.out.println(response);
             log.info("Response Body: "+EntityUtils.toString(response.getEntity()));
+
+            EntityUtils.consume(response.getEntity());
             postSuccess = true;
         } catch (Exception ex) {
             log.error("Error sending bind game event: "+ex.getMessage());
         }
+
 
         return postSuccess;
     }

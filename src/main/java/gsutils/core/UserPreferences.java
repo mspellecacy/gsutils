@@ -1,5 +1,7 @@
 package gsutils.core;
 
+import gsutils.monitor.WeatherMonitor;
+
 /**
  * Created by mspellecacy on 6/11/2016.
  */
@@ -9,15 +11,12 @@ public class UserPreferences {
     private String systemStatsString;
     private String openWeatherMapApiKey;
     private String weatherZipcodeString;
+    private String weatherStatsString;
+    private Boolean runWeatherMonitor;
+    private WeatherMonitor.WeatherUnit weatherUnit;
+
 
     public UserPreferences() {
-    }
-
-    public UserPreferences(String gameSenseEndpoint, String systemStatsString, String openWeatherMapApiKey, String weatherZipcodeString) {
-        this.gameSenseEndpoint = gameSenseEndpoint;
-        this.systemStatsString = systemStatsString;
-        this.openWeatherMapApiKey = openWeatherMapApiKey;
-        this.weatherZipcodeString = weatherZipcodeString;
     }
 
     public String getGameSenseEndpoint() {
@@ -58,5 +57,29 @@ public class UserPreferences {
 
     public void setWeatherZipcodeString(String weatherZipcodeString) {
         this.weatherZipcodeString = weatherZipcodeString;
+    }
+
+    public Boolean getRunWeatherMonitor() {
+        return runWeatherMonitor;
+    }
+
+    public void setRunWeatherMonitor(Boolean runWeatherMonitor) {
+        this.runWeatherMonitor = runWeatherMonitor;
+    }
+
+    public String getWeatherStatsString() {
+        return weatherStatsString;
+    }
+
+    public void setWeatherStatsString(String weatherStatsString) {
+        this.weatherStatsString = weatherStatsString;
+    }
+
+    public WeatherMonitor.WeatherUnit getWeatherUnit() {
+        return weatherUnit;
+    }
+
+    public void setWeatherUnit(WeatherMonitor.WeatherUnit weatherUnit) {
+        this.weatherUnit = weatherUnit;
     }
 }

@@ -1,5 +1,8 @@
 package gsutils.monitor;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -9,6 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
 
 /**
  * Created by mspellecacy on 6/12/2016.
@@ -18,6 +24,7 @@ public class WeatherMonitor {
     private static final Logger log = LoggerFactory.getLogger(WeatherMonitor.class);
     private static final String OWM_API = "http://api.openweathermap.org/data/2.5/weather";
 
+    private ObjectMapper mapper = new ObjectMapper();
     private String owmApiKey;
 
     public WeatherMonitor(String owmApiKey) {
@@ -32,24 +39,30 @@ public class WeatherMonitor {
         this.owmApiKey = owmApiKey;
     }
 
-    public String getWeatherByZip(String zipcode, WeatherUnit unit){
+    public Map<String, Object> getWeatherByZip(String zipcode, WeatherUnit unit){
+
+        Map<String, Object> weatherObj = new HashMap<>();
+
         HttpClient httpClient = HttpClientBuilder.create().build();
         String zipQuery = OWM_API+"?units="+unit+"&zip="+zipcode+"&APPID="+owmApiKey;
         HttpGet zipQueryGet = new HttpGet(zipQuery);
 
         try {
             HttpResponse response = httpClient.execute(zipQueryGet);
-            log.info(EntityUtils.toString(response.getEntity()));
+            String respBody = EntityUtils.toString(response.getEntity());
+            weatherObj = mapper.readValue(respBody, new TypeReference<Map<String, Object>>() {});
+
+            log.info(respBody);
         } catch (IOException e) {
-            log.error(e.getMessage());
+            log.error("Error in Fetch: "+e.getMessage());
         }
 
-        return"50F";
+        return weatherObj;
     }
 
 
     public enum WeatherUnit {
-        STANDARD(""),
+        STANDARD("kelvin"),
         METRIC("metric"),
         IMPERIAL("imperial");
 
@@ -59,6 +72,7 @@ public class WeatherMonitor {
             this.unitName = deviceTypeName;
         }
 
+        @JsonValue
         @Override
         public String toString() {
             return this.unitName;

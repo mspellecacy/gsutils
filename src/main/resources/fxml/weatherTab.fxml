@@ -1,24 +1,62 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Line?>
+<?import javafx.scene.text.Text?>
 <Tab closable="false" text="Weather" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
      fx:controller="gsutils.controller.WeatherTabController">
     <content>
-       <BorderPane>
+        <BorderPane>
             <padding>
                 <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
             </padding>
             <top>
-                <HBox spacing="10.0" >
-                    <Label fx:id="owmApiKeyLabel" text="OpenWeatherMap Api Key"/>
-                    <TextField fx:id="owmApiKeyField" promptText="Go to: http://openweathermap.org/api"/>
+                <HBox spacing="10.0">
+                    <Hyperlink fx:id="owmApiKeyLabel" text="Api Key" textAlignment="CENTER"
+                               onMouseClicked="#openBrowser"/>
+                    <TextField fx:id="owmApiKeyField" promptText="Go to: http://openweathermap.org/api"
+                               HBox.hgrow="ALWAYS"/>
+                    <TextField fx:id="zipcodeField" promptText="USA Zipcode"/>
+                    <ComboBox fx:id="weatherUnits" onAction="#unitChange"/>
                 </HBox>
             </top>
+            <center>
+                <VBox spacing="5.0">
+                    <Label style="-fx-font: NORMAL 20 Tahoma;" text="Output Options" />
+                    <TableView fx:id="weatherStatsTable">
+                        <columns>
+                            <TableColumn text="Name">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="displayName"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn text="Current Value">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="currentValue"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn text="Symbol">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="symbolValue"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                        </columns>
+                    </TableView>
+                    <Label text="Output Format" style="-fx-font: NORMAL 16 Tahoma;"/>
+                    <TextField fx:id="outputString" promptText="TEMP_CURF | WEAT_CON"/>
+                    <Label fx:id="previewLabel" text="Preview" style="-fx-font: NORMAL 16 Tahoma;"/>
+                    <TextField fx:id="previewOutputString" editable="false"/>
+                    <HBox spacing="10.0">
+                        <Button fx:id="savePrefsButton" text="Save" onAction="#savePrefs" />
+                        <ToggleButton fx:id="toggleServiceButton" text="OFF" onAction="#toggleGSEvents"/>
+                    </HBox>
+                </VBox>
+            </center>
         </BorderPane>
     </content>
 </Tab>

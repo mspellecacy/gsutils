@@ -1,5 +1,7 @@
 package gsutils.gscore;
 
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -11,12 +13,15 @@ public class GSEventRegistration {
     private String event;
 
     @JsonProperty("min_value")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Integer minValue;
 
     @JsonProperty("max_value")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Integer maxValue;
 
     @JsonProperty("icon_id")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Integer iconId;
 
     public GSEventRegistration() {

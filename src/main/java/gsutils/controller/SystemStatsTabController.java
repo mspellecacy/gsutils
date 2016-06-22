@@ -1,6 +1,7 @@
 package gsutils.controller;
 
 import gsutils.core.OutputOption;
+import gsutils.gscore.*;
 import gsutils.monitor.HostMonitor;
 import gsutils.service.GameSenseService;
 import gsutils.service.PreferencesService;
@@ -18,9 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.ResourceBundle;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * Created by mspellecacy on 6/10/2016.
@@ -35,7 +34,7 @@ public class SystemStatsTabController implements Initializable {
     private final ObservableList<OutputOption> outputOptions = FXCollections.observableArrayList();
 
     @FXML
-    private TableView systemStatsTable;
+    private TableView<OutputOption> systemStatsTable;
     @FXML
     private TextField outputString = new TextField("MEMUSED_PCT");
 
@@ -62,14 +61,39 @@ public class SystemStatsTabController implements Initializable {
         @Override
         public void run() {
             if (runMonitor) {
+                log.info("Pushing GS Events");
+                //Get our output string
                 String dataValue = outputString.getText();
 
+                //Do a basic replace against all of our potential output options
                 for (OutputOption option : outputOptions) {
                     dataValue = dataValue.replace(option.getSymbolValue(), option.getCurrentValue());
                 }
 
-                String eventJson = "{ \"game\": \"CPU_MONITOR\", \"event\": \"CPULOAD\", \"data\": { \"value\": \"" + dataValue + "\" } }";
-                gsService.sendGameEvent(eventJson);
+                //Setup a basic Map to push as our 'data' in the event.
+                HashMap<String, String> outputMap = new HashMap<>();
+
+                //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
+                // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
+                // I've been fucking with this bug for 3+ days... so today I hacked a fix to move on with my life.
+                // I'm sure its something obvious that I'm overlooking but I stopped caring.
+                // So I've decided to as append a random number of spaces to the end of each text payload.
+                // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
+                int staleValueHack = new Random().nextInt(11);
+                for(int i=0; i <= staleValueHack; i++){
+                    dataValue = dataValue+" ";
+                }
+
+                outputMap.put("value", dataValue);
+
+                //Setup our GameSense event
+                GSGameEvent gsEvent = new GSGameEvent();
+                gsEvent.setGame("GSUTILS");
+                gsEvent.setEvent("SYSTEM");
+                gsEvent.setData(outputMap);
+
+                //Push Game Sense event
+                gsService.sendGameEvent(gsEvent);
 
             }
         }
@@ -78,6 +102,7 @@ public class SystemStatsTabController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         log.debug("System Monitor Starting");
+        registerEvent();
 
         Timer timer = new Timer();
         timer.schedule(new UpdateStatsTask(), 0, 1000);
@@ -91,6 +116,37 @@ public class SystemStatsTabController implements Initializable {
             toggleServiceButton.fire();
 
         systemStatsTable.setItems(outputOptions);
+    }
+
+    private void registerEvent() {
+        //TODO: Make some factories to clean up all this boilerplate?
+
+        //Register the new event Weather provides.
+        GSEventRegistration eventReg = new GSEventRegistration();
+        eventReg.setGame("GSUTILS");
+        eventReg.setEvent("SYSTEM");
+        gsService.registerGameEvent(eventReg);
+
+        // Now bind event...
+        GSBindEvent bindEvent = new GSBindEvent();
+        bindEvent.setGame(eventReg.getGame());
+        bindEvent.setEvent(eventReg.getEvent());
+
+        //Basic Datas Map...
+        ArrayList<HashMap<String, Object>> datas = new ArrayList<>();
+        HashMap<String, Object> datasMap = new HashMap<>();
+        datasMap.put("has-text", true);
+        datasMap.put("repeats", true);
+
+        datas.add(datasMap);
+
+        //Final assembly of our event handler.
+        GSScreenedEventHandler eventHandler = new GSScreenedEventHandler();
+        eventHandler.setDatas(datas);
+
+        bindEvent.setEventHandlers(new GSEventHandler[]{eventHandler});
+        gsService.bindGameEvent(bindEvent);
+
     }
 
     public void toggleGSEvents(ActionEvent actionEvent) {
@@ -120,6 +176,7 @@ public class SystemStatsTabController implements Initializable {
         previewOutputString.setText(dataValue);
     }
 
+    //TODO: Refactor in to using String.valueOf() instead of String.format() pattern. Ex- Weather Controller
     private void updateMetrics() {
         log.debug("System Monitor Looping");
         try {

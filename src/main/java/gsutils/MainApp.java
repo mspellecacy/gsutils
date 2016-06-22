@@ -2,6 +2,8 @@ package gsutils;
 
 import gsutils.gscore.GSGameRegistration;
 import gsutils.service.GameSenseService;
+import gsutils.service.HostServicesService;
+import gsutils.service.PreferencesService;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -18,22 +20,23 @@ public class MainApp extends Application {
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
     private final GameSenseService gsService = new GameSenseService();
+    private final PreferencesService prefsService = PreferencesService.getInstance();
 
+
+    //TODO: Refactor all singletons in to enum pattern.
     public static void main(String[] args) throws Exception {
         launch(args);
     }
 
     public void start(Stage stage) throws Exception {
+        log.info("Starting GSUtils");
 
+        //First things first, register our 'game' with the GameSense Engine.
         GSGameRegistration gameRegistration = new GSGameRegistration();
         gameRegistration.setGame("GSUTILS");
-        gameRegistration.setGameDisplayName("GameSense Utils");
+        gameRegistration.setGameDisplayName("GSUtils");
         gameRegistration.setIconColorId(2);
-
-        log.info("Starting GSUtils");
         gsService.registerGame(gameRegistration);
-
-
 
         String fxmlFile = "/fxml/index.fxml";
         log.debug("Loading FXML for main view from: {}", fxmlFile);
@@ -47,6 +50,8 @@ public class MainApp extends Application {
         stage.setTitle("GSUtils - Make GameSense Great Again");
         stage.setScene(scene);
         stage.show();
+
+        HostServicesService.INSTANCE.init(getHostServices());
 
         stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
             @Override

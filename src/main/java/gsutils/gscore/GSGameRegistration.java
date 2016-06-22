@@ -1,5 +1,6 @@
 package gsutils.gscore;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -13,6 +14,7 @@ public class GSGameRegistration {
     private String gameDisplayName;
 
     @JsonProperty("icon_color_id")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer iconColorId;
 
     public GSGameRegistration() {

@@ -1,5 +1,7 @@
 package gsutils.gscore;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * Created by mspellecacy on 6/14/2016.
  */
@@ -30,6 +32,7 @@ public enum GSDeviceType {
         this.deviceTypeName = deviceTypeName;
     }
 
+    @JsonValue
     @Override
     public String toString() {
         return this.deviceTypeName;
