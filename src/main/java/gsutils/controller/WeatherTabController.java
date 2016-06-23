@@ -87,16 +87,15 @@ public class WeatherTabController implements Initializable {
     private void registerEvent() {
 
         //Register the new event Weather provides.
-        //GSEventRegistration eventReg = new GSEventRegistration();
-        //eventReg.setGame("GSUTILS");
-        //eventReg.setEvent("WEATHER");
-        //gsService.registerGameEvent(eventReg);
+        GSEventRegistration eventReg = new GSEventRegistration();
+        eventReg.setGame("GSUTILS");
+        eventReg.setEvent("WEATHER");
+        gsService.registerGameEvent(eventReg);
 
         // Now bind event...
         GSBindEvent bindEvent = new GSBindEvent();
         bindEvent.setGame("GSUTILS");
         bindEvent.setEvent("WEATHER");
-        bindEvent.setIconId(4);
 
         //Basic Datas Map...
         ArrayList<HashMap<String, Object>> dataFrames = new ArrayList<>();
