@@ -125,7 +125,7 @@ public class WeatherTabController implements Initializable {
             weatherObj = (HashMap<String, Object>) weatherMonitor.getWeatherByZip(zipcodeField.getText(), weatherUnits.getValue());
 
             //If we got something back from the OWM API...
-            if (!weatherObj.isEmpty() && weatherObj.get("cod").equals(401)) {
+            if (!weatherObj.isEmpty() && !weatherObj.get("cod").equals(401)) {
 
                 //Cast our returned weather data in to usable objects
                 HashMap<String, Object> weatherTemps = (HashMap<String, Object>) weatherObj.get("main");
