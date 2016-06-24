@@ -30,33 +30,24 @@ public class WeatherTabController implements Initializable {
     private final PreferencesService prefsService = PreferencesService.getInstance();
     private final GameSenseService gsService = new GameSenseService();
     private final Timer weatherTimer = new Timer();
-
-    private Boolean runMonitor = false;
-    private WeatherMonitor weatherMonitor;
-
-    @FXML
-    private ComboBox<WeatherMonitor.WeatherUnit> weatherUnits;
-
-    @FXML
-    private Hyperlink owmApiKeyLabel;
-
-    @FXML
-    private TextField owmApiKeyField;
-
-    @FXML
-    private TableView<OutputOption> weatherStatsTable;
-
-    @FXML
-    private ToggleButton toggleServiceButton;
-
-    @FXML
-    private TextField outputString;
-
-    @FXML
-    private TextField previewOutputString;
-
     @FXML
     public TextField zipcodeField;
+    private Boolean runMonitor = false;
+    private WeatherMonitor weatherMonitor;
+    @FXML
+    private ComboBox<WeatherMonitor.WeatherUnit> weatherUnits;
+    @FXML
+    private Hyperlink owmApiKeyLabel;
+    @FXML
+    private TextField owmApiKeyField;
+    @FXML
+    private TableView<OutputOption> weatherStatsTable;
+    @FXML
+    private ToggleButton toggleServiceButton;
+    @FXML
+    private TextField outputString;
+    @FXML
+    private TextField previewOutputString;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -71,10 +62,10 @@ public class WeatherTabController implements Initializable {
         zipcodeField.setText(prefsService.getUserPrefs().getWeatherZipcodeString());
         weatherStatsTable.setItems(outputOptions);
 
-        if(prefsService.getUserPrefs().getRunWeatherMonitor())
+        if (prefsService.getUserPrefs().getRunWeatherMonitor() != null && prefsService.getUserPrefs().getRunWeatherMonitor())
             toggleServiceButton.fire();
 
-        if(prefsService.getUserPrefs().getWeatherStatsString() != null){
+        if (prefsService.getUserPrefs().getWeatherStatsString() != null) {
             outputString.setText(prefsService.getUserPrefs().getWeatherStatsString());
         } else {
             outputString.setText("TEMP_CURF | WEAT_CON");
@@ -130,10 +121,11 @@ public class WeatherTabController implements Initializable {
 
         if (runMonitor) {
             //Go fetch our Weather data...
+
             weatherObj = (HashMap<String, Object>) weatherMonitor.getWeatherByZip(zipcodeField.getText(), weatherUnits.getValue());
 
             //If we got something back from the OWM API...
-            if (!weatherObj.isEmpty()) {
+            if (!weatherObj.isEmpty() && weatherObj.get("cod").equals(401)) {
 
                 //Cast our returned weather data in to usable objects
                 HashMap<String, Object> weatherTemps = (HashMap<String, Object>) weatherObj.get("main");
@@ -251,8 +243,8 @@ public class WeatherTabController implements Initializable {
                 // So I've decided to as append a random number of spaces to the end of each text payload.
                 // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
                 int staleValueHack = new Random().nextInt(11);
-                for(int i=0; i <= staleValueHack; i++){
-                    dataValue = dataValue+" ";
+                for (int i = 0; i <= staleValueHack; i++) {
+                    dataValue = dataValue + " ";
                 }
 
                 outputMap.put("value", dataValue);

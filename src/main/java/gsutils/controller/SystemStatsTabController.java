@@ -112,7 +112,7 @@ public class SystemStatsTabController implements Initializable {
             outputString.setText("MEMUSED_PCT%");
         } else outputString.setText(prefsService.getUserPrefs().getSystemStatsString());
 
-        if(prefsService.getUserPrefs().getSystemStatsOn())
+        if(prefsService.getUserPrefs().getSystemStatsOn() != null && prefsService.getUserPrefs().getSystemStatsOn())
             toggleServiceButton.fire();
 
         systemStatsTable.setItems(outputOptions);
