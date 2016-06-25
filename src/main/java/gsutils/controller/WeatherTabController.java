@@ -75,34 +75,6 @@ public class WeatherTabController implements Initializable {
         startMonitor();
     }
 
-    private void registerEvent() {
-
-        //Register the new event Weather provides.
-        GSEventRegistration eventReg = new GSEventRegistration();
-        eventReg.setGame("GSUTILS");
-        eventReg.setEvent("WEATHER");
-        gsService.registerGameEvent(eventReg);
-
-        // Now bind event...
-        GSBindEvent bindEvent = new GSBindEvent();
-        bindEvent.setGame("GSUTILS");
-        bindEvent.setEvent("WEATHER");
-
-        //Basic Datas Map...
-        ArrayList<HashMap<String, Object>> dataFrames = new ArrayList<>();
-        HashMap<String, Object> dataFrame = new HashMap<>();
-        dataFrame.put("has-text", true);
-        dataFrame.put("repeats", true);
-        dataFrames.add(dataFrame);
-
-        GSScreenedEventHandler eventHandler = new GSScreenedEventHandler();
-        eventHandler.setDatas(dataFrames);
-
-        bindEvent.setEventHandlers(new GSEventHandler[]{eventHandler});
-        gsService.bindGameEvent(bindEvent);
-
-    }
-
     private void startMonitor() {
         if (owmApiKeyField.getText() == "" && prefsService.getUserPrefs().getOpenWeatherMapApiKey() == null) {
             log.info("No default api key found.");
@@ -219,12 +191,45 @@ public class WeatherTabController implements Initializable {
         }
     }
 
+    private void registerEvent() {
+
+        //Register the new event Weather provides.
+        GSEventRegistration eventReg = new GSEventRegistration();
+        eventReg.setGame("GSUTILS");
+        eventReg.setEvent("WEATHER");
+        gsService.registerGameEvent(eventReg);
+
+        // Now bind event...
+        GSBindEvent bindEvent = new GSBindEvent();
+        bindEvent.setGame("GSUTILS");
+        bindEvent.setEvent("WEATHER");
+
+        //Basic Datas Map...
+        ArrayList<HashMap<String, Object>> dataFrames = new ArrayList<>();
+        HashMap<String, Object> dataFrame = new HashMap<>();
+        dataFrame.put("has-text", true);
+        //dataFrame.put("prefix", "");
+        //dataFrame.put("repeats", true);
+        dataFrames.add(dataFrame);
+
+        GSScreenedEventHandler eventHandler = new GSScreenedEventHandler();
+        eventHandler.setDatas(dataFrames);
+
+        bindEvent.setEventHandlers(new GSEventHandler[]{eventHandler});
+        gsService.bindGameEvent(bindEvent);
+
+    }
+
     private class PushGSEventTask extends TimerTask {
+
+        private long pushCount = 0;
 
         @Override
         public void run() {
             if (runMonitor) {
                 log.info("Pushing GS Events");
+                pushCount++;
+
                 //Get our output string
                 String dataValue = outputString.getText();
 
@@ -234,7 +239,7 @@ public class WeatherTabController implements Initializable {
                 }
 
                 //Setup a basic Map to push as our 'data' in the event.
-                HashMap<String, String> outputMap = new HashMap<>();
+                HashMap<String, Object> outputMap = new HashMap<>();
 
                 //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
                 // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
@@ -242,12 +247,13 @@ public class WeatherTabController implements Initializable {
                 // I'm sure its something obvious that I'm overlooking but I stopped caring.
                 // So I've decided to as append a random number of spaces to the end of each text payload.
                 // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
-                int staleValueHack = new Random().nextInt(11);
-                for (int i = 0; i <= staleValueHack; i++) {
-                    dataValue = dataValue + " ";
-                }
-
-                outputMap.put("value", dataValue);
+                //int staleValueHack = new Random().nextInt(11);
+                //for (int i = 0; i <= staleValueHack; i++) {
+                //    dataValue = dataValue + " ";
+                //}
+                outputMap.put("value", pushCount);
+                outputMap.put("prefix", dataValue);
+                outputMap.put("arg", "\"\"");
 
                 //Setup our GameSense event
                 GSGameEvent gsEvent = new GSGameEvent();
