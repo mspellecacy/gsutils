@@ -14,7 +14,8 @@ public class UserPreferences {
     private String weatherStatsString;
     private Boolean runWeatherMonitor;
     private WeatherMonitor.WeatherUnit weatherUnit;
-
+    private Boolean runDatetime;
+    private String datetimePattern;
 
     public UserPreferences() {
     }
@@ -81,5 +82,21 @@ public class UserPreferences {
 
     public void setWeatherUnit(WeatherMonitor.WeatherUnit weatherUnit) {
         this.weatherUnit = weatherUnit;
+    }
+
+    public Boolean getRunDatetime() {
+        return runDatetime;
+    }
+
+    public void setRunDatetime(Boolean runDatetime) {
+        this.runDatetime = runDatetime;
+    }
+
+    public String getDatetimePattern() {
+        return datetimePattern;
+    }
+
+    public void setDatetimePattern(String datetimePattern) {
+        this.datetimePattern = datetimePattern;
     }
 }

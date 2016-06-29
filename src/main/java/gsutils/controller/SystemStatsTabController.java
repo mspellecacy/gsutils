@@ -71,7 +71,7 @@ public class SystemStatsTabController implements Initializable {
                 }
 
                 //Setup a basic Map to push as our 'data' in the event.
-                HashMap<String, String> outputMap = new HashMap<>();
+                HashMap<String, Object> outputMap = new HashMap<>();
 
                 //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
                 // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.

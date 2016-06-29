@@ -29,17 +29,19 @@ public class WeatherTabController implements Initializable {
     private final ObservableList<OutputOption> outputOptions = FXCollections.observableArrayList();
     private final PreferencesService prefsService = PreferencesService.getInstance();
     private final GameSenseService gsService = new GameSenseService();
-    private final Timer weatherTimer = new Timer();
-    @FXML
-    public TextField zipcodeField;
+    private final Timer weatherTimer = new Timer();  //TODO: Should probably start using JavaFX's Task<> approach.
+
     private Boolean runMonitor = false;
     private WeatherMonitor weatherMonitor;
+
     @FXML
     private ComboBox<WeatherMonitor.WeatherUnit> weatherUnits;
     @FXML
     private Hyperlink owmApiKeyLabel;
     @FXML
     private TextField owmApiKeyField;
+    @FXML
+    private TextField zipcodeField;
     @FXML
     private TableView<OutputOption> weatherStatsTable;
     @FXML
@@ -234,7 +236,7 @@ public class WeatherTabController implements Initializable {
                 }
 
                 //Setup a basic Map to push as our 'data' in the event.
-                HashMap<String, String> outputMap = new HashMap<>();
+                HashMap<String, Object> outputMap = new HashMap<>();
 
                 //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
                 // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.

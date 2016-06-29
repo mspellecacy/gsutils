@@ -53,12 +53,9 @@ public class MainApp extends Application {
 
         HostServicesService.INSTANCE.init(getHostServices());
 
-        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-            @Override
-            public void handle(WindowEvent e) {
-                Platform.exit();
-                System.exit(0);
-            }
+        stage.setOnCloseRequest(e -> {
+            Platform.exit();
+            System.exit(0);
         });
 
     }

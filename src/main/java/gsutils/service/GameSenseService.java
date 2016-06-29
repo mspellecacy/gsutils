@@ -57,7 +57,7 @@ public class GameSenseService {
         try {
             HttpPost post = new HttpPost(GAMESENSE_HOST + REGISTER_GAME_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsGameRegistration));
-            log.info("Game Registration JSON: " + mapper.writeValueAsString(gsGameRegistration));
+            log.info("Game Registration JSON: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsGameRegistration));
             post.addHeader("content-type", "application/json");
             post.setEntity(jsonPayload);
 
@@ -111,7 +111,7 @@ public class GameSenseService {
         try {
             HttpPost post = new HttpPost(GAMESENSE_HOST + GAME_EVENT_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsGameEvent));
-            log.info("Event Payload: " + mapper.writeValueAsString(gsGameEvent));
+            log.info("Event Payload: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsGameEvent));
             post.addHeader("content-type", "application/json");
             post.setEntity(jsonPayload);
 
@@ -161,7 +161,7 @@ public class GameSenseService {
         try {
             HttpPost post = new HttpPost(GAMESENSE_HOST + BIND_GAME_EVENT_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(bindEvent));
-            log.info("Bind Event JSON: " + mapper.writeValueAsString(bindEvent));
+            log.info("Bind Event JSON: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(bindEvent));
             post.addHeader("content-type", "application/json");
             post.setEntity(jsonPayload);
 
@@ -190,7 +190,7 @@ public class GameSenseService {
         try {
             HttpPost post = new HttpPost(GAMESENSE_HOST + REGISTER_GAME_EVENT_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsEventRegistration));
-            log.info("Event Registration JSON: " + mapper.writeValueAsString(gsEventRegistration));
+            log.info("Event Registration JSON: " + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsEventRegistration));
             post.addHeader("content-type", "application/json");
             post.setEntity(jsonPayload);
 

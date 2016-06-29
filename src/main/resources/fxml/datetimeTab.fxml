@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<Tab closable="false" text="Date/Time" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
+     fx:controller="gsutils.controller.DateTimeTabController">
+    <content>
+        <BorderPane>
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+            <top>
+                <HBox spacing="10.0">
+                    <Hyperlink fx:id="dateTimeApiLink" text="DateTime Pattern" textAlignment="CENTER"
+                              onMouseClicked="#openBrowser" />
+                    <TextField fx:id="dateTimePattern" promptText="MM/dd H:mm:ss"
+                               HBox.hgrow="ALWAYS"/>
+                </HBox>
+            </top>
+            <center>
+                <VBox spacing="5.0">
+                    <Label fx:id="previewLabel" text="Preview" style="-fx-font: NORMAL 16 Tahoma;"/>
+                    <TextField fx:id="previewOutputString" editable="false"/>
+                    <HBox spacing="10.0">
+                        <Button fx:id="savePrefsButton" text="Save" onAction="#savePrefs" />
+                        <ToggleButton fx:id="toggleServiceButton" text="OFF" onAction="#toggleGSEvents"/>
+                    </HBox>
+                </VBox>
+            </center>
+        </BorderPane>
+    </content>
+</Tab>
