@@ -16,7 +16,7 @@
                 <HBox spacing="10.0">
                     <Hyperlink fx:id="dateTimeApiLink" text="DateTime Pattern" textAlignment="CENTER"
                               onMouseClicked="#openBrowser" />
-                    <TextField fx:id="dateTimePattern" promptText="MM/dd H:mm:ss"
+                    <TextField fx:id="dateTimePattern" promptText="dd/MM H:mm:ss"
                                HBox.hgrow="ALWAYS"/>
                 </HBox>
             </top>

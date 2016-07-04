@@ -9,11 +9,14 @@ import gsutils.service.PreferencesService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.ScheduledService;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +30,10 @@ public class WeatherTabController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(WeatherTabController.class);
 
     private final ObservableList<OutputOption> outputOptions = FXCollections.observableArrayList();
-    private final PreferencesService prefsService = PreferencesService.getInstance();
-    private final GameSenseService gsService = new GameSenseService();
-    private final Timer weatherTimer = new Timer();  //TODO: Should probably start using JavaFX's Task<> approach.
-
+    private final PreferencesService prefsService = PreferencesService.INSTANCE;
+    private final GameSenseService gsService = GameSenseService.INSTANCE;
+    private GSEventService gsEventService = new GSEventService();
+    private WeatherUpdateService wus = new WeatherUpdateService();
     private Boolean runMonitor = false;
     private WeatherMonitor weatherMonitor;
 
@@ -55,8 +58,10 @@ public class WeatherTabController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         log.debug("Weather Controller Starting");
 
-        weatherTimer.schedule(new UpdateWeatherTask(), 0, 10000); // Every 10 seconds. (Weather changes slowly, right?)
-        weatherTimer.schedule(new PushGSEventTask(), 0, 1000); //Update every 1 seconds, not that the data changes;
+        wus.setPeriod(Duration.seconds(10)); //Weather changes relatively slowly, so don't hammer the API
+        wus.start();
+
+        gsEventService.setPeriod(Duration.seconds(1));
 
         owmApiKeyField.setText(prefsService.getUserPrefs().getOpenWeatherMapApiKey());
         weatherUnits.getItems().setAll(WeatherMonitor.WeatherUnit.values());
@@ -112,7 +117,7 @@ public class WeatherTabController implements Initializable {
         } else {
             log.info("OWM Api Key: {}", prefsService.getUserPrefs().getOpenWeatherMapApiKey());
             weatherMonitor = new WeatherMonitor(prefsService.getUserPrefs().getOpenWeatherMapApiKey());
-            if (runMonitor) updateWeather(); //Fire off an initial weather data request.
+            if (runMonitor) gsEventService.restart();
         }
 
 
@@ -122,8 +127,8 @@ public class WeatherTabController implements Initializable {
         HashMap<String, Object> weatherObj = new HashMap<>();
 
         if (runMonitor) {
-            //Go fetch our Weather data...
 
+            //Go fetch our Weather data...
             weatherObj = (HashMap<String, Object>) weatherMonitor.getWeatherByZip(zipcodeField.getText(), weatherUnits.getValue());
 
             //If we got something back from the OWM API...
@@ -191,9 +196,11 @@ public class WeatherTabController implements Initializable {
         if (runMonitor) {
             toggleServiceButton.setSelected(true);
             toggleServiceButton.setText("ON");
+            gsEventService.restart();
         } else {
             toggleServiceButton.setSelected(false);
             toggleServiceButton.setText("OFF");
+            gsEventService.cancel();
         }
 
         log.info("Weather Monitoring Service Running: " + runMonitor);
@@ -212,55 +219,59 @@ public class WeatherTabController implements Initializable {
         //updateWeather();
     }
 
-    private class UpdateWeatherTask extends TimerTask {
-
-        @Override
-        public void run() {
-            updateWeather();
-            Platform.runLater(() -> updatePreviewLabel());
+    private class WeatherUpdateService extends ScheduledService<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    updateWeather();
+                    updatePreviewLabel();
+                    return null;
+                }
+            };
         }
     }
 
-    private class PushGSEventTask extends TimerTask {
+    private class GSEventService extends ScheduledService<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    log.info("Pushing GS Events");
+                    //Get our output string
+                    String dataValue = outputString.getText();
 
-        @Override
-        public void run() {
-            if (runMonitor) {
-                log.info("Pushing GS Events");
-                //Get our output string
-                String dataValue = outputString.getText();
+                    //Do a basic replace against all of our potential output options
+                    for (OutputOption option : outputOptions) {
+                        dataValue = dataValue.replace(option.getSymbolValue(), option.getCurrentValue());
+                    }
 
-                //Do a basic replace against all of our potential output options
-                for (OutputOption option : outputOptions) {
-                    dataValue = dataValue.replace(option.getSymbolValue(), option.getCurrentValue());
+                    //Setup a basic Map to push as our 'data' in the event.
+                    HashMap<String, Object> outputMap = new HashMap<>();
+
+                    //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
+                    // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
+                    // I've been fucking with this bug for 3+ days... so today I hacked a fix to move on with my life.
+                    // I'm sure its something obvious that I'm overlooking but I stopped caring.
+                    // So I've decided to as append a random number of spaces to the end of each text payload.
+                    // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
+                    int staleValueHack = new Random().nextInt(11);
+                    for (int i = 0; i <= staleValueHack; i++) {
+                        dataValue = dataValue + " ";
+                    }
+
+                    outputMap.put("value", dataValue);
+
+                    //Setup our GameSense event
+                    GSGameEvent gsEvent = new GSGameEvent();
+                    gsEvent.setGame("GSUTILS");
+                    gsEvent.setEvent("WEATHER");
+                    gsEvent.setData(outputMap);
+
+                    //Push Game Sense event
+                    gsService.sendGameEvent(gsEvent);
+
+                    return null;
                 }
-
-                //Setup a basic Map to push as our 'data' in the event.
-                HashMap<String, Object> outputMap = new HashMap<>();
-
-                //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
-                // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
-                // I've been fucking with this bug for 3+ days... so today I hacked a fix to move on with my life.
-                // I'm sure its something obvious that I'm overlooking but I stopped caring.
-                // So I've decided to as append a random number of spaces to the end of each text payload.
-                // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
-                int staleValueHack = new Random().nextInt(11);
-                for (int i = 0; i <= staleValueHack; i++) {
-                    dataValue = dataValue + " ";
-                }
-
-                outputMap.put("value", dataValue);
-
-                //Setup our GameSense event
-                GSGameEvent gsEvent = new GSGameEvent();
-                gsEvent.setGame("GSUTILS");
-                gsEvent.setEvent("WEATHER");
-                gsEvent.setData(outputMap);
-
-                //Push Game Sense event
-                gsService.sendGameEvent(gsEvent);
-
-            }
+            };
         }
 
     }

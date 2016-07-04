@@ -9,19 +9,21 @@ import javafx.application.HostServices;
 // Lifted and adapted from:
 // http://stackoverflow.com/questions/33094981/javafx-8-open-a-link-in-a-browser-without-reference-to-application Solution #4
 public enum HostServicesService {
-    INSTANCE ;
+    INSTANCE;
 
-    private HostServices hostServices ;
+    private HostServices hostServices;
+
     public void init(HostServices hostServices) {
         if (this.hostServices != null) {
             throw new IllegalStateException("Host services already initialized");
         }
-        this.hostServices = hostServices ;
+        this.hostServices = hostServices;
     }
+
     public HostServices getHostServices() {
         if (hostServices == null) {
             throw new IllegalStateException("Host services not initialized");
         }
-        return hostServices ;
+        return hostServices;
     }
 }

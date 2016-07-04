@@ -8,45 +8,43 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by mspellecacy on 6/11/2016.
  */
-public class PreferencesService {
-    private static PreferencesService instance;
-    private static final Logger log = LoggerFactory.getLogger(PreferencesService.class);
-    private static final String FILE_SEP = System.getProperty("file.separator");
-    private static final String USER_HOME = System.getProperty("user.home");
-    private static final String PREFS_DIR = ".gsutils";
-    private static final String PREFS_FILE = "preferences.json";
+public enum PreferencesService {
+    INSTANCE;
+
+    private Logger log = LoggerFactory.getLogger(PreferencesService.class);
+
+    private String dirSeparator = System.getProperty("file.separator");
+    private String userHome = System.getProperty("user.home");
+    private String prefsDir = ".gsutils";
+    private String prefsFileName = "preferences.json";
+    private String programDataDir = System.getenv("PROGRAMDATA");
+    private String gameSenseEndpoint = "";
 
     private ObjectMapper mapper = new ObjectMapper();
     private UserPreferences userPrefs;
     private File prefsFile;
 
 
-    private PreferencesService() {
+    PreferencesService() {
+        log.info("PrefsService Starting...");
         loadPreferences();
+        loadGameSenseConfig();
     }
 
-    public static synchronized PreferencesService getInstance() {
-        if (instance == null) {
-            instance = new PreferencesService();
-        }
-        return instance;
-    }
-
-    private Boolean loadPreferences() {
+    public Boolean loadPreferences() {
         boolean loadedSuccessfully;
-        String dir = USER_HOME + FILE_SEP + PREFS_DIR + FILE_SEP;
+        String dir = userHome + dirSeparator + prefsDir + dirSeparator;
         File configDir = new File(dir);
-        prefsFile = new File(dir + PREFS_FILE);
+        prefsFile = new File(dir + prefsFileName);
 
         //See if we have a config dir...
         if (!configDir.isDirectory()) {
-            log.info("Config Dir not found, trying to create create: "+configDir.getAbsolutePath());
+            log.info("Config Dir not found, trying to create create: {}", configDir.getAbsolutePath());
             if (configDir.mkdir()) {
                 log.info("Config dir created.");
             } else {
@@ -80,37 +78,40 @@ public class PreferencesService {
         return userPrefs;
     }
 
+    public void setUserPrefs(UserPreferences userPrefs) {
+        this.userPrefs = userPrefs;
+    }
+
     public void savePreferences(){
         try {
             mapper.writeValue(prefsFile, userPrefs);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error Saving Preferences: {}", e.getMessage());
         }
     }
 
-    //TODO: I handle this poorly, and we end up reading the props file too much. Needs a refactor in to sanity.
-    // Make GameSenseService a singleton? OMGz DEH ANTI-PATTERNS. D: D: D:
-    public String getGameSenseEndpoint() {
+    public void loadGameSenseConfig() {
 
-        String endpoint = "";
-
-        //Lifted and adapted from: https://github.com/SteelSeries/gamesense-sdk/blob/master/examples/minecraftforge1.8/src/main/java/com/sse3/gamesense/GameSenseMod.java#L137
-        String PRGDATA = System.getenv("PROGRAMDATA");
-        File propsFile = new File( PRGDATA+FILE_SEP+"SteelSeries"+FILE_SEP+"SteelSeries Engine 3"+FILE_SEP+"coreProps.json" );
+        File propsFile = new File( programDataDir + dirSeparator +"SteelSeries"+ dirSeparator +"SteelSeries Engine 3"+ dirSeparator +"coreProps.json" );
 
         try {
             Map<String, Object> confObj = mapper.readValue(propsFile, new TypeReference<Map<String, Object>>() {});
-            endpoint = (String) confObj.get("address");
+            this.gameSenseEndpoint = (String) confObj.get("address");
 
         } catch (IOException e) {
             log.error("Error loading GameSense Config: {}", e.getMessage());
         }
-
-        return endpoint;
     }
 
-    public void setUserPrefs(UserPreferences userPrefs) {
-        this.userPrefs = userPrefs;
+    public String getGameSenseEndpoint() {
+        return gameSenseEndpoint;
     }
+
+    public void setGameSenseEndpoint(String gameSenseEndpoint) {
+        this.gameSenseEndpoint = gameSenseEndpoint;
+    }
+
+
+
 }
 

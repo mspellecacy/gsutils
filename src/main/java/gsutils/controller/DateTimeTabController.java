@@ -5,12 +5,15 @@ import gsutils.service.GameSenseService;
 import gsutils.service.HostServicesService;
 import gsutils.service.PreferencesService;
 import javafx.application.Platform;
+import javafx.concurrent.ScheduledService;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,10 +27,12 @@ import java.util.*;
  */
 public class DateTimeTabController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(DateTimeTabController.class);
-    private final PreferencesService prefsService = PreferencesService.getInstance();
-    private final GameSenseService gsService = new GameSenseService();
+    private final PreferencesService prefsService = PreferencesService.INSTANCE;
+    private final GameSenseService gsService = GameSenseService.INSTANCE;
 
-    private final Timer datetimeTimer = new Timer();
+
+    private GSEventService gsEventService = new GSEventService();
+    private PreviewUpdateService previewUpdateService = new PreviewUpdateService();
 
     @FXML
     private TextField dateTimePattern;
@@ -37,8 +42,6 @@ public class DateTimeTabController implements Initializable {
 
     @FXML
     private TextField previewOutputString;
-
-    private boolean runMonitor = false;
 
 
     @Override
@@ -52,8 +55,9 @@ public class DateTimeTabController implements Initializable {
             dateTimePattern.setText(prefsService.getUserPrefs().getDatetimePattern());
         }
 
-        registerEvent();
-        datetimeTimer.schedule(new PushGSEventTask(), 0, 1000);
+        gsEventService.setPeriod(Duration.seconds(1));
+        previewUpdateService.setPeriod(Duration.seconds(1));
+        previewUpdateService.start();
 
     }
 
@@ -92,6 +96,7 @@ public class DateTimeTabController implements Initializable {
             output = date.format(formatter);
         } catch (IllegalArgumentException ex) {
             log.error(ex.getMessage());
+            output = ex.getMessage();
         }
         return output;
     }
@@ -100,60 +105,23 @@ public class DateTimeTabController implements Initializable {
         previewOutputString.setText(getDateTimeString());
     }
 
-    private class PushGSEventTask extends TimerTask {
-
-        @Override
-        public void run() {
-            Platform.runLater(() -> updatePreviewLabel());
-            if (runMonitor) {
-                log.info("Pushing GS Events");
-
-                String dataValue = getDateTimeString();
-                //Setup a basic Map to push as our 'data' in the event.
-                HashMap<String, Object> outputMap = new HashMap<>();
-
-                //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
-                // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
-                // I've been fucking with this bug for 3+ days... so today I hacked a fix to move on with my life.
-                // I'm sure its something obvious that I'm overlooking but I stopped caring.
-                // So I've decided to as append a random number of spaces to the end of each text payload.
-                // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
-                int staleValueHack = new Random().nextInt(11);
-                for (int i = 0; i <= staleValueHack; i++) {
-                    dataValue = dataValue + " ";
-                }
-
-                outputMap.put("value", dataValue);
-
-                //Setup our GameSense event
-                GSGameEvent gsEvent = new GSGameEvent();
-                gsEvent.setGame("GSUTILS");
-                gsEvent.setEvent("DATETIME");
-                gsEvent.setData(outputMap);
-
-                //Push Game Sense event
-                gsService.sendGameEvent(gsEvent);
-
-            }
-        }
-    }
-
     public void toggleGSEvents(ActionEvent actionEvent) {
-        runMonitor = toggleServiceButton.isSelected();
-        if (runMonitor) {
+
+        if (toggleServiceButton.isSelected()) {
             toggleServiceButton.setSelected(true);
             toggleServiceButton.setText("ON");
+            gsEventService.restart();
         } else {
             toggleServiceButton.setSelected(false);
             toggleServiceButton.setText("OFF");
+            gsEventService.cancel();
         }
 
-        log.info("Date/Time Service Running: " + runMonitor);
+        log.info("Date/Time Service Running: " + gsEventService.stateProperty());
     }
 
-
     public void savePrefs(ActionEvent actionEvent) {
-        prefsService.getUserPrefs().setRunDatetime(runMonitor);
+        prefsService.getUserPrefs().setRunDatetime(gsEventService.isRunning());
         prefsService.getUserPrefs().setDatetimePattern(dateTimePattern.getText());
 
         prefsService.savePreferences();
@@ -161,6 +129,62 @@ public class DateTimeTabController implements Initializable {
 
     public void openBrowser(Event event) {
         HostServicesService.INSTANCE.getHostServices().showDocument("https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#patterns");
+    }
+
+    private class PreviewUpdateService extends ScheduledService<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    Platform.runLater(() -> updatePreviewLabel());
+                    return null;
+                }
+            };
+        }
+    }
+
+    private class GSEventService extends ScheduledService<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    log.debug("Pushing GS Events");
+
+                    //Get our output String...
+                    String dataValue = getDateTimeString();
+
+                    //Setup a basic Map to push as our 'data' in the event.
+                    HashMap<String, Object> outputMap = new HashMap<>();
+
+                    //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
+                    // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
+                    // I've been fucking with this bug for 3+ days... so today I hacked a fix to move on with my life.
+                    // I'm sure its something obvious that I'm overlooking but I stopped caring.
+                    // So I've decided to as append a random number of spaces to the end of each text payload.
+                    // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
+                    int staleValueHack = new Random().nextInt(11);
+                    for (int i = 0; i <= staleValueHack; i++) {
+                        dataValue = dataValue + " ";
+                    }
+
+                    //Pack our data payload
+                    outputMap.put("value", dataValue);
+
+                    //Setup our GameSense event
+                    GSGameEvent gsEvent = new GSGameEvent();
+                    gsEvent.setGame("GSUTILS");
+                    gsEvent.setEvent("DATETIME");
+                    gsEvent.setData(outputMap);
+
+                    //Push Game Sense event
+                    gsService.sendGameEvent(gsEvent);
+
+                    //Update our preview regardless.
+                    Platform.runLater(() -> updatePreviewLabel());
+
+                    //Return nothing/Void.
+                    return null;
+                }
+            };
+        }
     }
 
 }

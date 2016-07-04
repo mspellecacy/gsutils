@@ -8,6 +8,8 @@ import gsutils.service.PreferencesService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.ScheduledService;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,6 +17,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +32,12 @@ public class SystemStatsTabController implements Initializable {
 
     private static boolean runMonitor = false;
 
-    private final GameSenseService gsService = new GameSenseService();
-    private final PreferencesService prefsService = PreferencesService.getInstance();
+    private final GameSenseService gsService = GameSenseService.INSTANCE;
+    private final PreferencesService prefsService = PreferencesService.INSTANCE;
     private final ObservableList<OutputOption> outputOptions = FXCollections.observableArrayList();
+
+    private StatsUpdateService statsUpdateService = new StatsUpdateService();
+    private GSEventService gsEventsService = new GSEventService(); //TODO: This naming convention kludge needs a rethink
 
     @FXML
     private TableView<OutputOption> systemStatsTable;
@@ -47,72 +53,22 @@ public class SystemStatsTabController implements Initializable {
     @FXML
     private Button savePrefsButton;
 
-    private class UpdateStatsTask extends TimerTask {
-
-        @Override
-        public void run() {
-            updateMetrics();
-            Platform.runLater(() -> updatePreviewLabel());
-        }
-    }
-
-    private class PushGSEventTask extends TimerTask {
-
-        @Override
-        public void run() {
-            if (runMonitor) {
-                log.info("Pushing GS Events");
-                //Get our output string
-                String dataValue = outputString.getText();
-
-                //Do a basic replace against all of our potential output options
-                for (OutputOption option : outputOptions) {
-                    dataValue = dataValue.replace(option.getSymbolValue(), option.getCurrentValue());
-                }
-
-                //Setup a basic Map to push as our 'data' in the event.
-                HashMap<String, Object> outputMap = new HashMap<>();
-
-                //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
-                // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
-                // I've been fucking with this bug for 3+ days... so today I hacked a fix to move on with my life.
-                // I'm sure its something obvious that I'm overlooking but I stopped caring.
-                // So I've decided to as append a random number of spaces to the end of each text payload.
-                // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
-                int staleValueHack = new Random().nextInt(11);
-                for(int i=0; i <= staleValueHack; i++){
-                    dataValue = dataValue+" ";
-                }
-
-                outputMap.put("value", dataValue);
-
-                //Setup our GameSense event
-                GSGameEvent gsEvent = new GSGameEvent();
-                gsEvent.setGame("GSUTILS");
-                gsEvent.setEvent("SYSTEM");
-                gsEvent.setData(outputMap);
-
-                //Push Game Sense event
-                gsService.sendGameEvent(gsEvent);
-
-            }
-        }
-    }
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         log.debug("System Monitor Starting");
         registerEvent();
 
-        Timer timer = new Timer();
-        timer.schedule(new UpdateStatsTask(), 0, 1000);
-        timer.schedule(new PushGSEventTask(), 0, 1000);
+        //Setup our services, each firing once a second...
+        statsUpdateService.setPeriod(Duration.seconds(1));
+        statsUpdateService.start();
+        gsEventsService.setPeriod(Duration.seconds(1));
+        gsEventsService.start();
 
         if (prefsService.getUserPrefs().getSystemStatsString() == null) {
             outputString.setText("MEMUSED_PCT%");
         } else outputString.setText(prefsService.getUserPrefs().getSystemStatsString());
 
-        if(prefsService.getUserPrefs().getSystemStatsOn() != null && prefsService.getUserPrefs().getSystemStatsOn())
+        if (prefsService.getUserPrefs().getSystemStatsOn() != null && prefsService.getUserPrefs().getSystemStatsOn())
             toggleServiceButton.fire();
 
         systemStatsTable.setItems(outputOptions);
@@ -120,7 +76,6 @@ public class SystemStatsTabController implements Initializable {
 
     private void registerEvent() {
         //TODO: Make some factories to clean up all this boilerplate?
-
         //Register the new event Weather provides.
         GSEventRegistration eventReg = new GSEventRegistration();
         eventReg.setGame("GSUTILS");
@@ -151,7 +106,7 @@ public class SystemStatsTabController implements Initializable {
 
     public void toggleGSEvents(ActionEvent actionEvent) {
         runMonitor = toggleServiceButton.isSelected();
-        if(runMonitor){
+        if (runMonitor) {
             toggleServiceButton.setSelected(true);
             toggleServiceButton.setText("ON");
         } else {
@@ -178,7 +133,6 @@ public class SystemStatsTabController implements Initializable {
 
     //TODO: Refactor in to using String.valueOf() instead of String.format() pattern. Ex- Weather Controller
     private void updateMetrics() {
-        log.debug("System Monitor Looping");
         try {
             outputOptions.setAll(
                     //---CPULOAD_PCT
@@ -207,9 +161,70 @@ public class SystemStatsTabController implements Initializable {
                             "MEMTTL_GB")
             );
         } catch (Exception e) {
-            log.debug(e.getMessage());
+            log.debug("Error updating system stats: {}", e.getMessage());
         }
 
+    }
+
+    private class StatsUpdateService extends ScheduledService<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    updateMetrics();
+                    Platform.runLater(() -> updatePreviewLabel());
+                    return null;
+                }
+            };
+        }
+    }
+
+    private class GSEventService extends ScheduledService<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    if (runMonitor) {
+                        log.debug("Pushing GS Events");
+
+                        //Get our output string
+                        String dataValue = outputString.getText();
+
+                        //Do a basic replace against all of our potential output options
+                        for (OutputOption option : outputOptions) {
+                            dataValue = dataValue.replace(option.getSymbolValue(), option.getCurrentValue());
+                        }
+
+                        //Setup a basic Map to push as our 'data' in the event.
+                        HashMap<String, Object> outputMap = new HashMap<>();
+
+                        //TODO: Pure fucking hack. GS3 seems to ignore events if their payload value doesn't change?
+                        // I've tried repeat:[0|true]  in the event frame, but it didn't seem to work.
+                        // I've been fucking with this bug for 3+ days... so today I hacked a fix to move on with my life.
+                        // I'm sure its something obvious that I'm overlooking but I stopped caring.
+                        // So I've decided to as append a random number of spaces to the end of each text payload.
+                        // These spaces wont ever be rendered, and they just 'run off' the end of the OLED, so who cares?
+                        int staleValueHack = new Random().nextInt(11);
+                        for (int i = 0; i <= staleValueHack; i++) {
+                            dataValue = dataValue + " ";
+                        }
+
+                        outputMap.put("value", dataValue);
+
+                        //Setup our GameSense event
+                        GSGameEvent gsEvent = new GSGameEvent();
+                        gsEvent.setGame("GSUTILS");
+                        gsEvent.setEvent("SYSTEM");
+                        gsEvent.setData(outputMap);
+
+                        //Push Game Sense event
+                        gsService.sendGameEvent(gsEvent);
+
+                    }
+
+                    //Return nothing/void
+                    return null;
+                }
+            };
+        }
     }
 
 }

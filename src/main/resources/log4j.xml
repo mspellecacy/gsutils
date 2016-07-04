@@ -11,7 +11,7 @@
     </appender>
 
     <logger name="com.frakle">
-        <level value="DEBUG"/>
+        <level value="INFO"/>
     </logger>
 
     <root>
