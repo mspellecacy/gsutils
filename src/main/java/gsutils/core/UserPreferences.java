@@ -2,6 +2,8 @@ package gsutils.core;
 
 import gsutils.monitor.WeatherMonitor;
 
+import java.util.ArrayList;
+
 /**
  * Created by mspellecacy on 6/11/2016.
  */
@@ -16,6 +18,8 @@ public class UserPreferences {
     private WeatherMonitor.WeatherUnit weatherUnit;
     private Boolean runDatetime;
     private String datetimePattern;
+    private Boolean runUserTimedEvents;
+    private ArrayList<UserTimedEvent> userTimedEvents;
 
     public UserPreferences() {
     }
@@ -98,5 +102,21 @@ public class UserPreferences {
 
     public void setDatetimePattern(String datetimePattern) {
         this.datetimePattern = datetimePattern;
+    }
+
+    public Boolean getRunUserTimedEvents() {
+        return runUserTimedEvents;
+    }
+
+    public void setRunUserTimedEvents(Boolean runUserTimedEvents) {
+        this.runUserTimedEvents = runUserTimedEvents;
+    }
+
+    public ArrayList<UserTimedEvent> getUserTimedEvents() {
+        return userTimedEvents;
+    }
+
+    public void setUserTimedEvents(ArrayList<UserTimedEvent> userTimedEvents) {
+        this.userTimedEvents = userTimedEvents;
     }
 }

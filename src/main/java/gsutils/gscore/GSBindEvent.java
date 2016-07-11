@@ -26,6 +26,11 @@ public class GSBindEvent {
     public GSBindEvent() {
     }
 
+    public GSBindEvent(String game, String event) {
+        this.game = game;
+        this.event = event;
+    }
+
     public String getGame() {
         return game;
     }

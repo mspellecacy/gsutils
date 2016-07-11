@@ -6,7 +6,6 @@ import gsutils.monitor.WeatherMonitor;
 import gsutils.service.GameSenseService;
 import gsutils.service.HostServicesService;
 import gsutils.service.PreferencesService;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.ScheduledService;
@@ -102,6 +101,7 @@ public class WeatherTabController implements Initializable {
         dataFrame.put("repeats", true);
         dataFrames.add(dataFrame);
 
+        //Final assembly of our event handler.
         GSScreenedEventHandler eventHandler = new GSScreenedEventHandler();
         eventHandler.setDatas(dataFrames);
 

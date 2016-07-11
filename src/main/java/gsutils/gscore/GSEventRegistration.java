@@ -27,6 +27,11 @@ public class GSEventRegistration {
     public GSEventRegistration() {
     }
 
+    public GSEventRegistration(String game, String event) {
+        this.game = game;
+        this.event = event;
+    }
+
     public GSEventRegistration(String game, String event, Integer minValue, Integer maxValue, Integer iconId) {
         this.game = game;
         this.event = event;

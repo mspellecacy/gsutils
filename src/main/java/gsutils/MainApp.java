@@ -22,8 +22,6 @@ public class MainApp extends Application {
     private final GameSenseService gsService = GameSenseService.INSTANCE;
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
 
-
-    //TODO: Refactor all singletons in to enum pattern.
     public static void main(String[] args) throws Exception {
         launch(args);
     }
@@ -33,8 +31,6 @@ public class MainApp extends Application {
 
         //First we must setup our endpoint.
         gsService.setGameSenseHost("HTTP://"+prefsService.getGameSenseEndpoint());
-
-
         //Second thing, register our 'game' with the GameSense Engine.
         GSGameRegistration gameRegistration = new GSGameRegistration();
         gameRegistration.setGame("GSUTILS");
@@ -52,7 +48,7 @@ public class MainApp extends Application {
         log.debug("Showing JFX scene");
         Scene scene = new Scene(rootNode, 600, 400);
         scene.getStylesheets().add("/styles/styles.css");
-        stage.setTitle("GSUtils - Make GameSense Great Again");
+        stage.setTitle("GSUtils - Don't be Evil");
         stage.setScene(scene);
         stage.show();
 

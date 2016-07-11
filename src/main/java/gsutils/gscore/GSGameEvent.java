@@ -18,6 +18,17 @@ public class GSGameEvent {
     public GSGameEvent() {
     }
 
+    public GSGameEvent(String game, String event) {
+        this.game = game;
+        this.event = event;
+    }
+
+    public GSGameEvent(String game, String event, Map<String, Object> data) {
+        this.game = game;
+        this.event = event;
+        this.data = data;
+    }
+
     public String getGame() {
         return game;
     }

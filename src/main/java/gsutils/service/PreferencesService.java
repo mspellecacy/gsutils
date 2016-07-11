@@ -3,6 +3,7 @@ package gsutils.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gsutils.core.UserPreferences;
+import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,9 +49,8 @@ public enum PreferencesService {
             if (configDir.mkdir()) {
                 log.info("Config dir created.");
             } else {
-                //TODO: Add graceful exit for this...
-                log.info("Unable to create config dir: ");
-                loadedSuccessfully = false;
+                log.info("Unable to create config dir: {}", configDir.getAbsolutePath());
+                log.info("Won't be able to save preferences.");
             }
         }
 

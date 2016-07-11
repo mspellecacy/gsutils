@@ -31,6 +31,8 @@ public enum GameSenseService {
     private static String REGISTER_GAME_PATH = "/game_metadata";
     private static String REGISTER_GAME_EVENT_PATH = "/register_game_event";
     private static String BIND_GAME_EVENT_PATH = "/bind_game_event";
+    private static String REMOVE_EVENT_PATH = "/remove_game_event";
+    private static String REMOVE_GAME_PATH = "/remove_game";
 
     private String gameSenseHost = "http://127.0.0.1:52083";
 
@@ -56,6 +58,31 @@ public enum GameSenseService {
             HttpPost post = new HttpPost(gameSenseHost + REGISTER_GAME_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsGameRegistration));
             log.info("Game Registration JSON: {} ", mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsGameRegistration));
+            post.addHeader("content-type", "application/json");
+            post.setEntity(jsonPayload);
+
+            HttpResponse response = httpClient.execute(post);
+
+            post.releaseConnection();
+
+            postSuccess = true;
+            log.debug("Response Body: {}", EntityUtils.toString(response.getEntity()));
+
+        } catch (IOException ex) {
+            log.error("Error sending game registration: {}", ex.getMessage());
+        }
+
+        return postSuccess;
+    }
+
+    public Boolean unregisterGame(GSGameRegistration gsGameRegistration) {
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        Boolean postSuccess = false;
+
+        try {
+            HttpPost post = new HttpPost(gameSenseHost + REMOVE_GAME_PATH);
+            StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsGameRegistration));
+            log.info("Game Removal JSON: {} ", mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsGameRegistration));
             post.addHeader("content-type", "application/json");
             post.setEntity(jsonPayload);
 
@@ -125,6 +152,33 @@ public enum GameSenseService {
 
         try {
             HttpPost post = new HttpPost(gameSenseHost + REGISTER_GAME_EVENT_PATH);
+            StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsEventRegistration));
+            log.info("Event Registration JSON: {}", mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsEventRegistration));
+            post.addHeader("content-type", "application/json");
+            post.setEntity(jsonPayload);
+
+            //Push Game Registration POST
+            HttpResponse response = httpClient.execute(post);
+
+            //Cleanup...
+            post.releaseConnection();
+
+            //All went well enough.
+            log.debug("Response Body: {}", EntityUtils.toString(response.getEntity()));
+            postSuccess = true;
+        } catch (IOException ex) {
+            log.error("Error sending game registration: {}", ex.getMessage());
+        }
+
+        return postSuccess;
+    }
+
+    public boolean removeGameEvent(GSEventRegistration gsEventRegistration) {
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        Boolean postSuccess = false;
+
+        try {
+            HttpPost post = new HttpPost(gameSenseHost + REMOVE_EVENT_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsEventRegistration));
             log.info("Event Registration JSON: {}", mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsEventRegistration));
             post.addHeader("content-type", "application/json");
