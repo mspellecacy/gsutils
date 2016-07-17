@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Created by mspellecacy on 7/10/2016.
  */
-public class GSPatternCustom {
+public class GSPatternCustom implements GSPattern {
 
     private String type;
     private Integer length_ms;

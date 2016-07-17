@@ -19,9 +19,9 @@ import java.io.IOException;
 
 /**
  * Created by mspellecacy on 6/6/2016.
+ * TODO: This Service doesn't feel very DRY.
  */
 
-//TODO: This Service doesn't feel very DRY.
 public enum GameSenseService {
     INSTANCE;
 
@@ -39,6 +39,7 @@ public enum GameSenseService {
     private ObjectMapper mapper = new ObjectMapper();
 
     GameSenseService() {
+        mapper.findAndRegisterModules();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 

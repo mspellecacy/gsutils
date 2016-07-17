@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gsutils.core.UserPreferences;
 import javafx.application.Platform;
+import org.controlsfx.control.Notifications;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,7 @@ public enum PreferencesService {
 
     PreferencesService() {
         log.info("PrefsService Starting...");
+        mapper.findAndRegisterModules();
         loadPreferences();
         loadGameSenseConfig();
     }
@@ -88,6 +90,7 @@ public enum PreferencesService {
         } catch (IOException e) {
             log.error("Error Saving Preferences: {}", e.getMessage());
         }
+        Notifications.create().title("GSUtils").text("Your Preferences have been saved.").show();
     }
 
     public void loadGameSenseConfig() {

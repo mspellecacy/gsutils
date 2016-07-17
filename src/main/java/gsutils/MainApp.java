@@ -30,7 +30,10 @@ public class MainApp extends Application {
         log.info("Starting GSUtils");
 
         //First we must setup our endpoint.
-        gsService.setGameSenseHost("HTTP://"+prefsService.getGameSenseEndpoint());
+        String gsEndpoint = "HTTP://"+prefsService.getGameSenseEndpoint();
+        gsService.setGameSenseHost(gsEndpoint);
+        log.info("GameSense Endpoint: {}", gsEndpoint);
+
         //Second thing, register our 'game' with the GameSense Engine.
         GSGameRegistration gameRegistration = new GSGameRegistration();
         gameRegistration.setGame("GSUTILS");

@@ -5,6 +5,10 @@ import gsutils.gscore.*;
 import gsutils.service.GameSenseService;
 import gsutils.service.PreferencesService;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.ScheduledService;
@@ -12,8 +16,13 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.BorderPane;
+import javafx.util.Callback;
 import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,22 +53,43 @@ public class TimersTabController implements Initializable {
     private final GSEventService gsEventService = new GSEventService();
 
     @FXML
+    private BorderPane timersBorderPane;
+
+    @FXML
     private ToggleButton toggleServiceButton;
 
     @FXML
     private TableView userTimedEventsTable;
 
+    @FXML
+    private Button addTimerButton;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         if(prefsService.getUserPrefs().getUserTimedEvents() != null) {
-            userEvents.setAll(prefsService.getUserPrefs().getUserTimedEvents());
+            //Loop over all of our saved events a make sure they're bound.
+            ArrayList<UserTimedEvent> events = prefsService.getUserPrefs().getUserTimedEvents();
+            for (UserTimedEvent event: events) {
+                log.info("Adding UserTimedEvent:{ eventName: {} }",
+                       event.getEventName());
+                registerEvent(event);
+            }
+
+            //Add all our saved events to the Timers Pool.
+            userEvents.setAll(events);
         } else { //We're gonna inject a default event if they don't have any yet.
+            log.info("Adding new default event for user...");
 
             //Create an event.
             GSBindEvent newEvent = new GSBindEvent(GAME, "BASIC_TIMER");
 
             //Create a new Handler for our Event.
-            GSPattern[] patterns = new GSPattern[]{new GSPatternPredefined(GSTactilePredefinedPattern.STRONGCLICK_100)};
+            GSPatternPredefined tactilePattern = new GSPatternPredefined(GSTactilePredefinedPattern.STRONGCLICK_100);
+
+            //And add it to our array of patterns...
+            GSPattern[] patterns = new GSPattern[]{tactilePattern};
+
+            //Add those patterns to our new TactileEventHandler
             GSTactileEventHandler eventHandler = new GSTactileEventHandler();
             eventHandler.setPattern(patterns);
 
@@ -76,18 +106,78 @@ public class TimersTabController implements Initializable {
 
             //Finally register our event with both the GameSense3 API and internally.
             registerEvent(event);
-
         }
+
         //Attach our userEvents to our table.
         userTimedEventsTable.setItems(userEvents);
+        userTimedEventsTable.setEditable(true);
+        userTimedEventsTable.refresh();
 
+        //Event Name Column ...
+        TableColumn<UserTimedEvent, String> nameColumn = new TableColumn<>("Name");
+        nameColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<UserTimedEvent, String> param) {
+                return new SimpleStringProperty(param.getValue().getEventName());
+            }
+        });
+        userTimedEventsTable.getColumns().add(nameColumn);
+
+        //Next Trigger DateTime Column
+        TableColumn<UserTimedEvent, String> nextTriggerColumn = new TableColumn<>("Next Trigger Date/Time");
+        nextTriggerColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<UserTimedEvent, String> param) {
+                return new SimpleStringProperty(param.getValue().getNextTriggerDateTime().toString());
+            }
+        });
+        userTimedEventsTable.getColumns().add(nextTriggerColumn);
+
+        //Interval Column
+        TableColumn<UserTimedEvent, Number> intervalColumn = new TableColumn<>("Interval (sec)");
+        intervalColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, Number>, ObservableValue<Number>>() {
+            @Override
+            public ObservableValue<Number> call(TableColumn.CellDataFeatures<UserTimedEvent, Number> param) {
+                return  new SimpleIntegerProperty(param.getValue().getInterval());
+            }
+        });
+        userTimedEventsTable.getColumns().add(intervalColumn);
+
+        //Auto Restart Column...
+        TableColumn<UserTimedEvent, Boolean> autoRestartColumn = new TableColumn<>("Auto Restart");
+        autoRestartColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, Boolean>, ObservableValue<Boolean>>() {
+            @Override
+            public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<UserTimedEvent, Boolean> param) {
+                return new SimpleBooleanProperty(param.getValue().getAutoRestartTimer());
+            }
+        });
+        userTimedEventsTable.getColumns().add(autoRestartColumn);
+
+        //Enabled Column...
+        TableColumn<UserTimedEvent, Boolean> enabledColumn = new TableColumn<>("Enabled");
+        enabledColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, Boolean>, ObservableValue<Boolean>>() {
+            @Override
+            public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<UserTimedEvent, Boolean> param) {
+                return new SimpleBooleanProperty(param.getValue().getEnabled());
+            }
+        });
+        userTimedEventsTable.getColumns().add(enabledColumn)
+;
+
+
+        BorderPane.setMargin(timersBorderPane, new Insets(10,10,10,10));
         gsEventService.setPeriod(Duration.seconds(1));  //Check every second, regardless.
+
+
+
+
+
+
     }
 
     private void registerEvent(UserTimedEvent event) {
         gsService.bindGameEvent(event.getGameEvent());
         userEvents.add(event);
-
     }
 
     private class GSEventService extends ScheduledService<Void> {
@@ -123,6 +213,7 @@ public class TimersTabController implements Initializable {
                             }
                         }
                     }
+                    userTimedEventsTable.refresh();
                     return null;
                 }
             };
@@ -131,7 +222,7 @@ public class TimersTabController implements Initializable {
 
     public void savePrefs(ActionEvent actionEvent) {
         prefsService.getUserPrefs().setRunUserTimedEvents(toggleServiceButton.isSelected());
-        prefsService.getUserPrefs().setUserTimedEvents((ArrayList<UserTimedEvent>) userEvents.stream());
+        prefsService.getUserPrefs().setUserTimedEvents(new ArrayList<>(userEvents));
         prefsService.savePreferences();
     }
 
@@ -147,6 +238,6 @@ public class TimersTabController implements Initializable {
             gsEventService.cancel();
         }
 
-        log.info("Timers Service Running: " + gsEventService.stateProperty().getName());
+        log.info("Timers Service Running: " + gsEventService.isRunning());
     }
 }

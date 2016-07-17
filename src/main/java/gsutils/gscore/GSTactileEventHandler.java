@@ -1,7 +1,9 @@
 package gsutils.gscore;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 /**
  * Created by mspellecacy on 7/9/2016.
@@ -9,24 +11,22 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({"device-type", "mode", "zone", "pattern", "rate"})
 public class GSTactileEventHandler implements GSEventHandler {
 
-    @JsonProperty("mode")
-    private String mode;
-
     //This is really the meat.
     private GSPattern[] pattern;
     private Integer rate;
+    private GSDeviceType deviceType;
+    private String mode;
+    private GSTactileZones zone;
 
     public GSTactileEventHandler() {
     }
 
-    @JsonProperty("device-type")
-    @Override
+    @JsonGetter("device-type")
     public GSDeviceType getDeviceType() {
         return GSDeviceType.TACTILE;
     }
 
-    @JsonProperty("zone")
-    @Override
+    @JsonGetter("zone")
     public GSDeviceZone getZone() {
         return GSTactileZones.ONE;
     }
@@ -34,16 +34,13 @@ public class GSTactileEventHandler implements GSEventHandler {
     public String getMode() {
         return "vibrate";
     }
-
     public void setMode(String mode) {
         this.mode = mode;
     }
 
-    @JsonProperty("pattern")
     public GSPattern[] getPattern() {
         return pattern;
     }
-
     public void setPattern(GSPattern[] pattern) {
         this.pattern = pattern;
     }

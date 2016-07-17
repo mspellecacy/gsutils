@@ -48,6 +48,9 @@ public class DateTimeTabController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         log.debug("Date/Time Controller Starting");
 
+        //Register our event.
+        registerEvent();
+
         if (prefsService.getUserPrefs().getRunDatetime() != null && prefsService.getUserPrefs().getRunDatetime())
             toggleServiceButton.fire();
 
