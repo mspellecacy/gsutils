@@ -83,6 +83,26 @@
             <version>8.40.10</version>
         </dependency>
 
+        <!-- Add event more components to JavaFX -->
+        <dependency>
+            <groupId>org.jfxtras</groupId>
+            <artifactId>jfxtras-all</artifactId>
+            <version>8.0-r5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jfxtras</groupId>
+            <artifactId>jfxtras-controls</artifactId>
+            <version>8.0-r5</version>
+        </dependency>
+
+        <!-- NIce fonts and things for JavaFX -->
+        <dependency>
+            <groupId>de.jensd</groupId>
+            <artifactId>fontawesomefx</artifactId>
+            <version>8.9</version>
+            <type>pom</type>
+        </dependency>
+
         <!-- Apache Commons -->
         <dependency>
             <groupId>commons-lang</groupId>

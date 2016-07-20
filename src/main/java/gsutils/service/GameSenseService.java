@@ -181,7 +181,7 @@ public enum GameSenseService {
         try {
             HttpPost post = new HttpPost(gameSenseHost + REMOVE_EVENT_PATH);
             StringEntity jsonPayload = new StringEntity(mapper.writeValueAsString(gsEventRegistration));
-            log.info("Event Registration JSON: {}", mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsEventRegistration));
+            log.info("Event Removal JSON: {}", mapper.writerWithDefaultPrettyPrinter().writeValueAsString(gsEventRegistration));
             post.addHeader("content-type", "application/json");
             post.setEntity(jsonPayload);
 

@@ -4,7 +4,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
-<?import impl.org.controlsfx.table.FilterPanel.CheckItem?>
 <Tab closable="false" text="Timers" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
      fx:controller="gsutils.controller.TimersTabController">
     <content>
@@ -36,9 +35,33 @@
             </top>
             <center>
                 <VBox spacing="5.0">
-
                     <TableView fx:id="userTimedEventsTable" editable="true">
                         <columns>
+                            <TableColumn text="Name">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="eventName"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn text="Next Trigger Date/Time">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="nextTriggerDateTime"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn text="Enabled">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="enabled"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn text="Auto Restart">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="autoRestartTimer"/>
+                                </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn text="Interval (sec)">
+                                <cellValueFactory>
+                                    <PropertyValueFactory property="interval"/>
+                                </cellValueFactory>
+                            </TableColumn>
                         </columns>
                     </TableView>
 

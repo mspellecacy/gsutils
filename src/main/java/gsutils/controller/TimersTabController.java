@@ -4,42 +4,55 @@ import gsutils.core.UserTimedEvent;
 import gsutils.gscore.*;
 import gsutils.service.GameSenseService;
 import gsutils.service.PreferencesService;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.ToggleButton;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxListCell;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.text.Font;
 import javafx.util.Callback;
 import javafx.util.Duration;
+import jfxtras.scene.control.LocalDateTimePicker;
+import org.controlsfx.control.PopOver;
+import org.controlsfx.control.PropertySheet;
+import org.controlsfx.control.action.ActionProxy;
+import org.controlsfx.glyphfont.FontAwesome;
+import org.controlsfx.glyphfont.Glyph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 import javax.jws.soap.SOAPBinding;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
+import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ResourceBundle;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * Created by mspellecacy on 7/4/2016.
  * NOTES:  So one of the core things with this is that every user timer is effectively a custom gamesense event and that
- *         means we have a lot of flexibility in how they're displayed. It also adds another layer of complexity as
- *         we're now heavily interacting with the gamesense API as we manage events.
+ * means we have a lot of flexibility in how they're displayed. It also adds another layer of complexity as
+ * we're now heavily interacting with the gamesense API as we manage events.
  */
 
 public class TimersTabController implements Initializable {
@@ -66,12 +79,12 @@ public class TimersTabController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        if(prefsService.getUserPrefs().getUserTimedEvents() != null) {
+        if (prefsService.getUserPrefs().getUserTimedEvents() != null) {
             //Loop over all of our saved events a make sure they're bound.
             ArrayList<UserTimedEvent> events = prefsService.getUserPrefs().getUserTimedEvents();
-            for (UserTimedEvent event: events) {
+            for (UserTimedEvent event : events) {
                 log.info("Adding UserTimedEvent:{ eventName: {} }",
-                       event.getEventName());
+                        event.getEventName());
                 registerEvent(event);
             }
 
@@ -106,6 +119,7 @@ public class TimersTabController implements Initializable {
 
             //Finally register our event with both the GameSense3 API and internally.
             registerEvent(event);
+            userEvents.add(event);
         }
 
         //Attach our userEvents to our table.
@@ -113,111 +127,69 @@ public class TimersTabController implements Initializable {
         userTimedEventsTable.setEditable(true);
         userTimedEventsTable.refresh();
 
-        //Event Name Column ...
-        TableColumn<UserTimedEvent, String> nameColumn = new TableColumn<>("Name");
-        nameColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, String>, ObservableValue<String>>() {
-            @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<UserTimedEvent, String> param) {
-                return new SimpleStringProperty(param.getValue().getEventName());
+        //Actions Column
+        TableColumn<UserTimedEvent, Boolean> actionsColumn = new TableColumn<>();
+        //We need a special cell handler since we want to inject buttons.
+        class ActionsCell extends TableCell<UserTimedEvent, Boolean> {
+            final Button editButton = new Button("", new Glyph("FontAwesome", FontAwesome.Glyph.EDIT));
+            final Button delButton = new Button("", new Glyph("FontAwesome", FontAwesome.Glyph.REMOVE));
+            final HBox hbox = new HBox();
+            final PopOver editor = new PopOver();
+
+            ActionsCell() {
+                hbox.getChildren().addAll(editButton, delButton);
+                hbox.setSpacing(10);
+                hbox.setAlignment(Pos.CENTER);
+                delButton.setOnAction(a -> {
+                    //TODO: Add confirmation dialog.
+                    // get Selected Item
+                    UserTimedEvent currentEvent = ActionsCell.this.getTableView().getItems().get(ActionsCell.this.getIndex());
+                    //remove selected item from the table list
+                    unregisterEvent(currentEvent);
+                    userEvents.removeAll(currentEvent);
+                });
+                editButton.setOnAction(a -> {
+                    // get Selected Item
+                    UserTimedEvent currentEvent = ActionsCell.this.getTableView().getItems().get(ActionsCell.this.getIndex());
+                    editor.setTitle("Event Editor");
+                    try {
+                        URL editorPath = this.getClass().getClassLoader().getResource("fxml/UserTimedEventEditorPopOver.fxml");
+                        FXMLLoader loader = new FXMLLoader(editorPath);
+                        UserTimedEventEditorPopOverController controller = new UserTimedEventEditorPopOverController(currentEvent);
+                        loader.setController(controller);
+                        //controller.initData(currentEvent);
+
+                        editor.setContentNode(loader.load());
+
+                    } catch (IOException e) {
+                        log.error("Error loading editor pane: {}", e.getMessage());
+                    }
+                    editor.show(editButton);
+                });
             }
-        });
-        userTimedEventsTable.getColumns().add(nameColumn);
 
-        //Next Trigger DateTime Column
-        TableColumn<UserTimedEvent, String> nextTriggerColumn = new TableColumn<>("Next Trigger Date/Time");
-        nextTriggerColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, String>, ObservableValue<String>>() {
             @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<UserTimedEvent, String> param) {
-                return new SimpleStringProperty(param.getValue().getNextTriggerDateTime().toString());
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                if (!empty)
+                    setGraphic(hbox);
             }
-        });
-        userTimedEventsTable.getColumns().add(nextTriggerColumn);
+        }
+        actionsColumn.setCellValueFactory(param -> new SimpleBooleanProperty(true));
+        actionsColumn.setCellFactory(param -> new ActionsCell());
+        userTimedEventsTable.getColumns().add(actionsColumn);
 
-        //Interval Column
-        TableColumn<UserTimedEvent, Number> intervalColumn = new TableColumn<>("Interval (sec)");
-        intervalColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, Number>, ObservableValue<Number>>() {
-            @Override
-            public ObservableValue<Number> call(TableColumn.CellDataFeatures<UserTimedEvent, Number> param) {
-                return  new SimpleIntegerProperty(param.getValue().getInterval());
-            }
-        });
-        userTimedEventsTable.getColumns().add(intervalColumn);
-
-        //Auto Restart Column...
-        TableColumn<UserTimedEvent, Boolean> autoRestartColumn = new TableColumn<>("Auto Restart");
-        autoRestartColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, Boolean>, ObservableValue<Boolean>>() {
-            @Override
-            public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<UserTimedEvent, Boolean> param) {
-                return new SimpleBooleanProperty(param.getValue().getAutoRestartTimer());
-            }
-        });
-        userTimedEventsTable.getColumns().add(autoRestartColumn);
-
-        //Enabled Column...
-        TableColumn<UserTimedEvent, Boolean> enabledColumn = new TableColumn<>("Enabled");
-        enabledColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<UserTimedEvent, Boolean>, ObservableValue<Boolean>>() {
-            @Override
-            public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<UserTimedEvent, Boolean> param) {
-                return new SimpleBooleanProperty(param.getValue().getEnabled());
-            }
-        });
-        userTimedEventsTable.getColumns().add(enabledColumn)
-;
-
-
-        BorderPane.setMargin(timersBorderPane, new Insets(10,10,10,10));
         gsEventService.setPeriod(Duration.seconds(1));  //Check every second, regardless.
-
-
-
-
-
 
     }
 
     private void registerEvent(UserTimedEvent event) {
         gsService.bindGameEvent(event.getGameEvent());
-        userEvents.add(event);
     }
 
-    private class GSEventService extends ScheduledService<Void> {
-        protected Task<Void> createTask() {
-            return new Task<Void>() {
-                private void sendEvent(GSBindEvent event){
-
-                    //Get an always-changing output String...
-                    String dataValue = LocalDateTime.now().toString();
-
-                    //Setup a basic Map to push as our 'data' in the event.
-                    HashMap<String, Object> outputMap = new HashMap<>();
-
-                    //Pack our data payload
-                    outputMap.put("value", dataValue);
-
-                    //Setup our GameSense event
-                    GSGameEvent gsEvent = new GSGameEvent(event.getGame(), event.getEvent());
-                    gsEvent.setData(outputMap);
-
-                    //Push Game Sense event
-                    gsService.sendGameEvent(gsEvent);
-                }
-
-                protected Void call() throws Exception {
-                    for (UserTimedEvent event: userEvents) {
-                        if(event.getEnabled() & LocalDateTime.now().isAfter(event.getNextTriggerDateTime())) {
-                            sendEvent(event.getGameEvent());
-                            if(event.getAutoRestartTimer()) {
-                                event.setNextTriggerDateTime(LocalDateTime.now().plusSeconds(event.getInterval()));
-                            } else {
-                                event.setEnabled(false);
-                            }
-                        }
-                    }
-                    userTimedEventsTable.refresh();
-                    return null;
-                }
-            };
-        }
+    private void unregisterEvent(UserTimedEvent event) {
+        GSEventRegistration gsEvent = new GSEventRegistration(event.getGameEvent().getGame(), event.getGameEvent().getEvent());
+        gsService.removeGameEvent(gsEvent);
     }
 
     public void savePrefs(ActionEvent actionEvent) {
@@ -239,5 +211,45 @@ public class TimersTabController implements Initializable {
         }
 
         log.info("Timers Service Running: " + gsEventService.isRunning());
+    }
+
+    private class GSEventService extends ScheduledService<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                private void sendEvent(GSBindEvent event) {
+
+                    //Get an always-changing output String...
+                    String dataValue = LocalDateTime.now().toString();
+
+                    //Setup a basic Map to push as our 'data' in the event.
+                    HashMap<String, Object> outputMap = new HashMap<>();
+
+                    //Pack our data payload
+                    outputMap.put("value", dataValue);
+
+                    //Setup our GameSense event
+                    GSGameEvent gsEvent = new GSGameEvent(event.getGame(), event.getEvent());
+                    gsEvent.setData(outputMap);
+
+                    //Push Game Sense event
+                    gsService.sendGameEvent(gsEvent);
+                }
+
+                protected Void call() throws Exception {
+                    for (UserTimedEvent event : userEvents) {
+                        if (event.getEnabled() & LocalDateTime.now().isAfter(event.getNextTriggerDateTime())) {
+                            sendEvent(event.getGameEvent());
+                            if (event.getAutoRestartTimer()) {
+                                event.setNextTriggerDateTime(LocalDateTime.now().plusSeconds(event.getInterval()));
+                            } else {
+                                event.setEnabled(false);
+                            }
+                        }
+                    }
+                    userTimedEventsTable.refresh();
+                    return null;
+                }
+            };
+        }
     }
 }
