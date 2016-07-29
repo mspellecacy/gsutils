@@ -11,25 +11,26 @@ import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import jfxtras.scene.control.LocalDateTimeTextField;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 /**
  * Created by mspellecacy on 7/4/2016.
@@ -44,9 +45,12 @@ public class TimersTabController implements Initializable {
     private static final String GAME = "GSUTILS";
 
     private final ObservableList<UserTimedEvent> userEvents = FXCollections.observableArrayList();
+
     private final GameSenseService gsService = GameSenseService.INSTANCE;
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
     private final GSEventService gsEventService = new GSEventService();
+
+    private UserTimedEvent selectedUserTimedEvent = new UserTimedEvent();
 
     @FXML
     private BorderPane timersBorderPane;
@@ -57,11 +61,39 @@ public class TimersTabController implements Initializable {
     @FXML
     private TableView userTimedEventsTable;
 
+
+    //@FXML
+    //private TitledPane editorActionsPane;
+
     @FXML
     private Button addTimerButton;
 
+    //Details Pane...
+    @FXML
+    private MenuItem selectedEventActionsMenuSaveItem;
+    @FXML
+    private MenuItem selectedEventActionsMenuSaveAsNewItem;
+    @FXML
+    private MenuItem selectedEventActionsMenuDeleteItem;
+    @FXML
+    private ToggleButton selectedEventEnabledToggle;
+    @FXML
+    private ToggleButton selectedEventAutoRestartToggle;
+    @FXML
+    private TextField selectedEventNameField;
+    @FXML
+    private LocalDateTimeTextField selectedEventNextTriggerDateTimeField;
+    @FXML
+    private TextField selectedEventRepeatField;
+    @FXML
+    private TextField selectedEventIntervalField;
+    @FXML
+    private TableView timerHandlersTable;
+
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
         if (prefsService.getUserPrefs().getUserTimedEvents() != null) {
             //Loop over all of our saved events a make sure they're bound.
             ArrayList<UserTimedEvent> events = prefsService.getUserPrefs().getUserTimedEvents();
@@ -114,13 +146,12 @@ public class TimersTabController implements Initializable {
         TableColumn<UserTimedEvent, Boolean> actionsColumn = new TableColumn<>();
         //We need a special cell handler since we want to inject buttons.
         class ActionsCell extends TableCell<UserTimedEvent, Boolean> {
-            final Button editButton = new Button("", new Glyph("FontAwesome", FontAwesome.Glyph.EDIT));
             final Button delButton = new Button("", new Glyph("FontAwesome", FontAwesome.Glyph.REMOVE));
             final HBox hbox = new HBox();
             final PopOver editor = new PopOver();
 
             ActionsCell() {
-                hbox.getChildren().addAll(editButton, delButton);
+                hbox.getChildren().addAll(delButton);
                 hbox.setSpacing(10);
                 hbox.setAlignment(Pos.CENTER);
                 delButton.setOnAction(a -> {
@@ -130,24 +161,6 @@ public class TimersTabController implements Initializable {
                     //remove selected item from the table list
                     unregisterEvent(currentEvent);
                     userEvents.removeAll(currentEvent);
-                });
-                editButton.setOnAction(a -> {
-                    // get Selected Item
-                    UserTimedEvent currentEvent = ActionsCell.this.getTableView().getItems().get(ActionsCell.this.getIndex());
-                    editor.setTitle("Event Editor");
-                    try {
-                        URL editorPath = this.getClass().getClassLoader().getResource("fxml/UserTimedEventEditorPopOver.fxml");
-                        FXMLLoader loader = new FXMLLoader(editorPath);
-                        UserTimedEventEditorPopOverController controller = new UserTimedEventEditorPopOverController(currentEvent);
-                        loader.setController(controller);
-                        //controller.initData(currentEvent);
-
-                        editor.setContentNode(loader.load());
-
-                    } catch (IOException e) {
-                        log.error("Error loading editor pane: {}", e.getMessage());
-                    }
-                    editor.show(editButton);
                 });
             }
 
@@ -160,7 +173,32 @@ public class TimersTabController implements Initializable {
         }
         actionsColumn.setCellValueFactory(param -> new SimpleBooleanProperty(true));
         actionsColumn.setCellFactory(param -> new ActionsCell());
-        userTimedEventsTable.getColumns().add(actionsColumn);
+        //userTimedEventsTable.getColumns().add(actionsColumn);
+
+        //Handle Master pane selection...
+        //Lifted/adapted from: http://stackoverflow.com/questions/26424769/javafx8-how-to-create-listener-for-selection-of-row-in-tableview
+        userTimedEventsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                selectedUserTimedEvent = (UserTimedEvent) newSelection;
+                selectedEventEnabledToggle.setSelected(selectedUserTimedEvent.getEnabled());
+                selectedEventAutoRestartToggle.setSelected(selectedUserTimedEvent.getAutoRestartTimer());
+                selectedEventNameField.setText(selectedUserTimedEvent.getEventName());
+                selectedEventNextTriggerDateTimeField.setLocalDateTime(selectedUserTimedEvent.getNextTriggerDateTime());
+                selectedEventRepeatField.setText(String.valueOf(selectedUserTimedEvent.getRepeat()));
+                selectedEventIntervalField.setText(String.valueOf(selectedUserTimedEvent.getInterval()));
+            }
+        });
+
+        Glyph saveIcon = new Glyph("FontAwesome", FontAwesome.Glyph.SAVE);
+        saveIcon.color(Color.BLACK);
+        Glyph saveAsIcon = new Glyph("FontAwesome", FontAwesome.Glyph.PLUS);
+        saveAsIcon.color(Color.BLACK);
+        Glyph deleteIcon = new Glyph("FontAwesome", FontAwesome.Glyph.REMOVE);
+        deleteIcon.color(Color.BLACK);
+
+        selectedEventActionsMenuSaveItem.setGraphic(saveIcon);
+        selectedEventActionsMenuSaveAsNewItem.setGraphic(saveAsIcon);
+        selectedEventActionsMenuDeleteItem.setGraphic(deleteIcon);
 
         gsEventService.setPeriod(Duration.seconds(1));  //Check every second, regardless.
 
@@ -173,6 +211,43 @@ public class TimersTabController implements Initializable {
     private void unregisterEvent(UserTimedEvent event) {
         GSEventRegistration gsEvent = new GSEventRegistration(event.getGameEvent().getGame(), event.getGameEvent().getEvent());
         gsService.removeGameEvent(gsEvent);
+    }
+
+    public void selectedEventActionsMenuSaveAsNewItemHandler(ActionEvent event) {
+        event.consume();
+        ArrayList<UserTimedEvent> tempEventsList = (ArrayList<UserTimedEvent>) userEvents.stream().filter(p -> !p.getEventName().isEmpty()).collect(Collectors.toList());
+        UserTimedEvent newEvent = (UserTimedEvent) userTimedEventsTable.getItems().get(userTimedEventsTable.getSelectionModel().getSelectedIndex());
+
+        UserTimedEvent newContrivedEvent = new UserTimedEvent(
+                newEvent.getGameEvent(),
+                newEvent.getNextTriggerDateTime(),
+                newEvent.getAutoRestartTimer(),
+                newEvent.getRepeat(),
+                newEvent.getInterval(),
+                newEvent.getEnabled()
+        );
+
+        newContrivedEvent.setEventName("NEW_" + newEvent.getEventName());
+
+        log.info("New Event Name: {}", newContrivedEvent.getEventName());
+        for (UserTimedEvent ev : tempEventsList) {
+            log.info("Events List Contains: {}", ev.getEventName());
+        }
+        log.info("-------------------------------");
+        tempEventsList.add(newContrivedEvent);
+        for (UserTimedEvent ev : tempEventsList) {
+            log.info("Events List Contains: {}", ev.getEventName());
+        }
+        //userTimedEventsTable.refresh();
+        userEvents.clear();
+
+        userEvents.setAll(tempEventsList);
+        registerEvent(newContrivedEvent);
+    }
+
+    public void selectedEventActionsMenuDeleteItemHandler(ActionEvent event) {
+        unregisterEvent(selectedUserTimedEvent);
+        userEvents.removeAll(selectedUserTimedEvent);
     }
 
     public void savePrefs(ActionEvent actionEvent) {

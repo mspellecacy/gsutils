@@ -107,4 +107,9 @@ public class UserTimedEvent {
         return this.gameEvent.getEvent();
     }
 
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
+        this.gameEvent.setEvent(eventName);
+    }
+
 }
