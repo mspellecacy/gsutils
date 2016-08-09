@@ -4,7 +4,6 @@ import gsutils.core.UserTimedEvent;
 import gsutils.gscore.*;
 import gsutils.service.GameSenseService;
 import gsutils.service.PreferencesService;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.ScheduledService;
@@ -12,14 +11,14 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 import jfxtras.scene.control.LocalDateTimeTextField;
-import org.controlsfx.control.PopOver;
 import org.controlsfx.glyphfont.FontAwesome;
 import org.controlsfx.glyphfont.Glyph;
 import org.slf4j.Logger;
@@ -28,9 +27,9 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 
 /**
  * Created by mspellecacy on 7/4/2016.
@@ -45,12 +44,14 @@ public class TimersTabController implements Initializable {
     private static final String GAME = "GSUTILS";
 
     private final ObservableList<UserTimedEvent> userEvents = FXCollections.observableArrayList();
+    private final ObservableList<GSEventHandler> eventEditorTimerHandlers = FXCollections.observableArrayList();
 
     private final GameSenseService gsService = GameSenseService.INSTANCE;
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
     private final GSEventService gsEventService = new GSEventService();
 
     private UserTimedEvent selectedUserTimedEvent = new UserTimedEvent();
+    private GSEventHandler selectedUserTimedEventHandler;
 
     @FXML
     private BorderPane timersBorderPane;
@@ -70,25 +71,27 @@ public class TimersTabController implements Initializable {
 
     //Details Pane...
     @FXML
-    private MenuItem selectedEventActionsMenuSaveItem;
+    private MenuItem eventEditorActionsMenuSaveItem;
     @FXML
-    private MenuItem selectedEventActionsMenuSaveAsNewItem;
+    private MenuItem eventEditorActionsMenuSaveAsNewItem;
     @FXML
-    private MenuItem selectedEventActionsMenuDeleteItem;
+    private MenuItem eventEditorActionsMenuDeleteItem;
     @FXML
-    private ToggleButton selectedEventEnabledToggle;
+    private ToggleButton eventEditorEnabledToggle;
     @FXML
-    private ToggleButton selectedEventAutoRestartToggle;
+    private ToggleButton eventEditorAutoRestartToggle;
     @FXML
-    private TextField selectedEventNameField;
+    private TextField eventEditorNameField;
     @FXML
-    private LocalDateTimeTextField selectedEventNextTriggerDateTimeField;
+    private LocalDateTimeTextField eventEditorNextTriggerDateTimeField;
     @FXML
-    private TextField selectedEventRepeatField;
+    private TextField eventEditorRepeatField;
     @FXML
-    private TextField selectedEventIntervalField;
+    private TextField eventEditorIntervalField;
     @FXML
-    private TableView timerHandlersTable;
+    private TableView eventEditorTimerHandlersTable;
+    @FXML
+    private VBox handlerEditorVBox;
 
 
     @Override
@@ -142,50 +145,46 @@ public class TimersTabController implements Initializable {
         userTimedEventsTable.setEditable(true);
         userTimedEventsTable.refresh();
 
-        //Actions Column
-        TableColumn<UserTimedEvent, Boolean> actionsColumn = new TableColumn<>();
-        //We need a special cell handler since we want to inject buttons.
-        class ActionsCell extends TableCell<UserTimedEvent, Boolean> {
-            final Button delButton = new Button("", new Glyph("FontAwesome", FontAwesome.Glyph.REMOVE));
-            final HBox hbox = new HBox();
-            final PopOver editor = new PopOver();
-
-            ActionsCell() {
-                hbox.getChildren().addAll(delButton);
-                hbox.setSpacing(10);
-                hbox.setAlignment(Pos.CENTER);
-                delButton.setOnAction(a -> {
-                    //TODO: Add confirmation dialog.
-                    // get Selected Item
-                    UserTimedEvent currentEvent = ActionsCell.this.getTableView().getItems().get(ActionsCell.this.getIndex());
-                    //remove selected item from the table list
-                    unregisterEvent(currentEvent);
-                    userEvents.removeAll(currentEvent);
-                });
-            }
-
-            @Override
-            protected void updateItem(Boolean item, boolean empty) {
-                super.updateItem(item, empty);
-                if (!empty)
-                    setGraphic(hbox);
-            }
-        }
-        actionsColumn.setCellValueFactory(param -> new SimpleBooleanProperty(true));
-        actionsColumn.setCellFactory(param -> new ActionsCell());
-        //userTimedEventsTable.getColumns().add(actionsColumn);
-
         //Handle Master pane selection...
         //Lifted/adapted from: http://stackoverflow.com/questions/26424769/javafx8-how-to-create-listener-for-selection-of-row-in-tableview
         userTimedEventsTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+
             if (newSelection != null) {
+                //Get our selected event to edit...
                 selectedUserTimedEvent = (UserTimedEvent) newSelection;
-                selectedEventEnabledToggle.setSelected(selectedUserTimedEvent.getEnabled());
-                selectedEventAutoRestartToggle.setSelected(selectedUserTimedEvent.getAutoRestartTimer());
-                selectedEventNameField.setText(selectedUserTimedEvent.getEventName());
-                selectedEventNextTriggerDateTimeField.setLocalDateTime(selectedUserTimedEvent.getNextTriggerDateTime());
-                selectedEventRepeatField.setText(String.valueOf(selectedUserTimedEvent.getRepeat()));
-                selectedEventIntervalField.setText(String.valueOf(selectedUserTimedEvent.getInterval()));
+
+                //Popular the 'General' Editor Tab..
+                eventEditorEnabledToggle.setSelected(selectedUserTimedEvent.getEnabled());
+                eventEditorAutoRestartToggle.setSelected(selectedUserTimedEvent.getAutoRestartTimer());
+                eventEditorNameField.setText(selectedUserTimedEvent.getEventName());
+                eventEditorNextTriggerDateTimeField.setLocalDateTime(selectedUserTimedEvent.getNextTriggerDateTime());
+                eventEditorRepeatField.setText(String.valueOf(selectedUserTimedEvent.getRepeat()));
+                eventEditorIntervalField.setText(String.valueOf(selectedUserTimedEvent.getInterval()));
+                eventEditorTimerHandlers.setAll(selectedUserTimedEvent.getGameEvent().getEventHandlers());
+
+                //Populate the Handlers Editor Tab...
+                eventEditorTimerHandlersTable.setItems(eventEditorTimerHandlers);
+                eventEditorTimerHandlersTable.getSelectionModel().selectedItemProperty().addListener((o, oS, nS) -> {
+                    handlerEditorVBox.getChildren().clear();
+
+                    if (o.getValue() != null) {
+                        selectedUserTimedEventHandler = (GSEventHandler) nS;
+
+                        GSDeviceType handlerType = selectedUserTimedEventHandler.getDeviceType();
+                        //TODO: This is... probably bad. I think perhaps I've run down an rabbit hole...
+                        switch (handlerType) {
+                            case TACTILE:
+                                switch (nS.getClass().getSimpleName()) {
+                                    case "GSTactileEventHandler":
+                                        GSTactileEventHandler teHandler = (GSTactileEventHandler) nS;
+                                        System.out.println("Pattern Count: " + teHandler.getPattern().length);
+                                        for (GSPattern pattern : teHandler.getPattern()) {
+                                            tactilePatternEditorBuilder(pattern);
+                                        }
+                                }
+                        }
+                    }
+                });
             }
         });
 
@@ -196,14 +195,101 @@ public class TimersTabController implements Initializable {
         Glyph deleteIcon = new Glyph("FontAwesome", FontAwesome.Glyph.REMOVE);
         deleteIcon.color(Color.BLACK);
 
-        selectedEventActionsMenuSaveItem.setGraphic(saveIcon);
-        selectedEventActionsMenuSaveAsNewItem.setGraphic(saveAsIcon);
-        selectedEventActionsMenuDeleteItem.setGraphic(deleteIcon);
+        eventEditorActionsMenuSaveItem.setGraphic(saveIcon);
+        eventEditorActionsMenuSaveAsNewItem.setGraphic(saveAsIcon);
+        eventEditorActionsMenuDeleteItem.setGraphic(deleteIcon);
+
+        StringConverter<Integer> formatter = new StringConverter<Integer>() {
+            @Override
+            public String toString(Integer object) {
+                return (object == null) ? "0" : object.toString();
+            }
+
+            @Override
+            public Integer fromString(String string) {
+                return Integer.parseInt(string);
+            }
+        };
+
+        eventEditorIntervalField.setTextFormatter(new TextFormatter<>(formatter, 0));
+        eventEditorRepeatField.setTextFormatter(new TextFormatter<>(formatter, 0));
 
         gsEventService.setPeriod(Duration.seconds(1));  //Check every second, regardless.
 
     }
 
+    /****
+     * Handler Editor Interface Builders...
+     */
+    private void tactilePatternEditorBuilder(GSPattern pattern) {
+
+        BorderPane headerBP = new BorderPane();
+        Label headerLabel = new Label("Handler Editor");
+        headerLabel.setStyle("-fx-font: NORMAL 16 Tahoma;");
+        headerBP.setLeft(headerLabel);
+
+        HBox buttonHBox = new HBox();
+        buttonHBox.setSpacing(5);
+        Button saveHandlerButton = new Button("Save");
+
+        Button saveAsNewHandlerButton = new Button("As New");
+        buttonHBox.getChildren().addAll(saveHandlerButton, saveAsNewHandlerButton);
+        headerBP.setRight(buttonHBox);
+
+        //ComboBox<GSDeviceType> deviceTypeCbx = new ComboBox<>();
+        //deviceTypeCbx.getItems().setAll(GSDeviceType.values());
+        //ComboBox<String> patternTypeCbx = new ComboBox<>();
+        handlerEditorVBox.getChildren().add(headerBP);
+
+        switch (pattern.getClass().getSimpleName()) {
+            case "GSPatternPredefined":
+                //Extract out Pattern Info...
+                GSPatternPredefined p = (GSPatternPredefined) pattern;
+                GSTactilePredefinedPattern tp = ((GSPatternPredefined) pattern).getType();
+
+                //Label...
+                Label tpLabel = new Label("Predefined Tactile Pattern");
+
+                //Setup Our ComboBox
+                ComboBox<GSTactilePredefinedPattern> patternCbx = new ComboBox<>();
+                patternCbx.getItems().setAll(GSTactilePredefinedPattern.values());
+                patternCbx.setValue(tp);
+                // Add our editor options to the VBox for interaction...
+                handlerEditorVBox.getChildren().addAll(tpLabel, patternCbx);
+
+                // Implement our individual save ...
+                saveHandlerButton.addEventHandler(ActionEvent.ACTION, (e) -> {
+
+                    p.setType(patternCbx.getValue());
+                    GSTactileEventHandler handler = (GSTactileEventHandler) selectedUserTimedEventHandler;
+                    handler.setPattern(new GSPattern[]{p});
+                });
+
+            default:
+                System.out.println("Pattern Class: " + pattern.getClass().getSimpleName());
+        }
+        saveHandlerButton.addEventHandler(ActionEvent.ACTION, (e) -> {
+            GSBindEvent bindEvent = selectedUserTimedEvent.getGameEvent();
+            //bindEvent.addEventHandler(selectedUserTimedEventHandler);
+            ArrayList<GSEventHandler> tempList = new ArrayList<>(Arrays.asList(bindEvent.getEventHandlers()));
+            tempList.removeIf((h) -> h.getDeviceType() == selectedUserTimedEventHandler.getDeviceType());
+            tempList.add(selectedUserTimedEventHandler);
+
+            bindEvent.setEventHandlers(tempList.toArray(new GSEventHandler[0]));
+
+            UserTimedEvent ute = (UserTimedEvent) userTimedEventsTable.getSelectionModel().getSelectedItem();
+            selectedUserTimedEvent = ute;
+
+            //Piggyback on our save event...
+            eventEditorActionsMenuSaveItemHandler(new ActionEvent());
+        });
+
+
+    }
+
+    /****
+     * GameSense Management
+     */
     private void registerEvent(UserTimedEvent event) {
         gsService.bindGameEvent(event.getGameEvent());
     }
@@ -213,36 +299,30 @@ public class TimersTabController implements Initializable {
         gsService.removeGameEvent(gsEvent);
     }
 
+    /****
+     * Tab UI/UX Event Handlers...
+     ****/
+    public void eventEditorActionsMenuSaveItemHandler(ActionEvent actionEvent) {
+        selectedUserTimedEvent.setEnabled(eventEditorEnabledToggle.isSelected());
+        selectedUserTimedEvent.setAutoRestartTimer(eventEditorAutoRestartToggle.isSelected());
+        selectedUserTimedEvent.setEventName(eventEditorNameField.getText());
+        selectedUserTimedEvent.setNextTriggerDateTime(eventEditorNextTriggerDateTimeField.getLocalDateTime());
+        selectedUserTimedEvent.setRepeat(Integer.parseInt(eventEditorRepeatField.getText()));
+        selectedUserTimedEvent.setInterval(Integer.parseInt(eventEditorIntervalField.getText()));
+        userEvents.set(userTimedEventsTable.getSelectionModel().getSelectedIndex(), selectedUserTimedEvent);
+        unregisterEvent(selectedUserTimedEvent);
+        registerEvent(selectedUserTimedEvent);
+    }
+
     public void selectedEventActionsMenuSaveAsNewItemHandler(ActionEvent event) {
         event.consume();
-        ArrayList<UserTimedEvent> tempEventsList = (ArrayList<UserTimedEvent>) userEvents.stream().filter(p -> !p.getEventName().isEmpty()).collect(Collectors.toList());
-        UserTimedEvent newEvent = (UserTimedEvent) userTimedEventsTable.getItems().get(userTimedEventsTable.getSelectionModel().getSelectedIndex());
-
-        UserTimedEvent newContrivedEvent = new UserTimedEvent(
-                newEvent.getGameEvent(),
-                newEvent.getNextTriggerDateTime(),
-                newEvent.getAutoRestartTimer(),
-                newEvent.getRepeat(),
-                newEvent.getInterval(),
-                newEvent.getEnabled()
-        );
-
-        newContrivedEvent.setEventName("NEW_" + newEvent.getEventName());
-
-        log.info("New Event Name: {}", newContrivedEvent.getEventName());
-        for (UserTimedEvent ev : tempEventsList) {
-            log.info("Events List Contains: {}", ev.getEventName());
+        //TODO: Make this ensures true-uniqueness of game event names, otherwise bad things could/will happen.
+        if (userEvents.stream().anyMatch(e -> e.getGameEvent().getEvent().equals(eventEditorNameField.getText()))) {
+            eventEditorNameField.setText("NEW_" + eventEditorNameField.getText());
         }
-        log.info("-------------------------------");
-        tempEventsList.add(newContrivedEvent);
-        for (UserTimedEvent ev : tempEventsList) {
-            log.info("Events List Contains: {}", ev.getEventName());
-        }
-        //userTimedEventsTable.refresh();
-        userEvents.clear();
 
-        userEvents.setAll(tempEventsList);
-        registerEvent(newContrivedEvent);
+        //Register our event with GameSense
+        eventEditorActionsMenuSaveItem.fire();
     }
 
     public void selectedEventActionsMenuDeleteItemHandler(ActionEvent event) {

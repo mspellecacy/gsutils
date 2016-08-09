@@ -95,12 +95,19 @@
             <version>8.0-r5</version>
         </dependency>
 
-        <!-- NIce fonts and things for JavaFX -->
+        <!-- Nice fonts and things for JavaFX -->
         <dependency>
             <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx</artifactId>
             <version>8.9</version>
             <type>pom</type>
+        </dependency>
+
+        <!-- Stream utility functions -->
+        <dependency>
+            <groupId>com.codepoetics</groupId>
+            <artifactId>protonpack</artifactId>
+            <version>1.9</version>
         </dependency>
 
         <!-- Apache Commons -->

@@ -1,7 +1,14 @@
 package gsutils.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.cfg.MapperConfig;
+import com.fasterxml.jackson.databind.introspect.Annotated;
+import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import gsutils.gscore.GSBindEvent;
 import gsutils.gscore.GSEventRegistration;
 import gsutils.gscore.GSGameEvent;
@@ -41,6 +48,21 @@ public enum GameSenseService {
     GameSenseService() {
         mapper.findAndRegisterModules();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        //This was the most elegant way to selectively ignore @JsonTypeInfo annotations when serializing that I could find.
+        //It basically just returns null when the @JsonTypeInfo is found in a class during serialization.
+        //Lifted/Adapted from: http://jackson-users.ning.com/forum/topics/how-to-not-include-type-info-during-serialization-with
+        final JacksonAnnotationIntrospector serializeAnnotationIntrospector = new JacksonAnnotationIntrospector() {
+            protected TypeResolverBuilder<?> _findTypeResolver(MapperConfig<?> config, Annotated ann, JavaType baseType) {
+                if (!ann.hasAnnotation(JsonTypeInfo.class)) {
+                    return super._findTypeResolver(config, ann, baseType);
+                }
+                return null;
+            }
+        };
+
+        mapper.setAnnotationIntrospector(serializeAnnotationIntrospector);
+
     }
 
     public String getGameSenseHost() {
@@ -126,6 +148,9 @@ public enum GameSenseService {
     public Boolean bindGameEvent(GSBindEvent bindEvent) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;
+        final ObjectWriter w = mapper.writer();
+
+
 
         try {
             HttpPost post = new HttpPost(gameSenseHost + BIND_GAME_EVENT_PATH);

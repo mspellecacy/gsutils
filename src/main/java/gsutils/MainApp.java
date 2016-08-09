@@ -6,12 +6,10 @@ import gsutils.service.HostServicesService;
 import gsutils.service.PreferencesService;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +47,7 @@ public class MainApp extends Application {
 
         //Finally build and show our scene on the main stage.
         log.debug("Showing JFX scene");
-        Scene scene = new Scene(rootNode, 600, 400);
+        Scene scene = new Scene(rootNode, 800, 600);
         scene.getStylesheets().add("/styles/styles.css");
         stage.setTitle("GSUtils - Don't be Evil");
         stage.setScene(scene);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.layout.*?>
@@ -33,8 +33,6 @@
                 <SplitPane orientation="HORIZONTAL">
                     <items>
                         <!-- Our 'Master' view, a list of our Events -->
-
-
                         <TableView fx:id="userTimedEventsTable" editable="true">
                             <columns>
                                 <TableColumn text="Name">
@@ -75,43 +73,61 @@
                                 <menus>
                                     <Menu fx:id="selectEventActionsMenu" text="Actions">
                                         <items>
-                                            <MenuItem fx:id="selectedEventActionsMenuSaveItem" text="Save"></MenuItem>
-                                            <MenuItem fx:id="selectedEventActionsMenuSaveAsNewItem" text="Save as New"
+                                            <MenuItem fx:id="eventEditorActionsMenuSaveItem" text="Save"
+                                                      onAction="#eventEditorActionsMenuSaveItemHandler"></MenuItem>
+                                            <MenuItem fx:id="eventEditorActionsMenuSaveAsNewItem" text="Save as New"
                                                       onAction="#selectedEventActionsMenuSaveAsNewItemHandler"/>
-                                            <MenuItem fx:id="selectedEventActionsMenuDeleteItem" text="Delete"
+                                            <MenuItem fx:id="eventEditorActionsMenuDeleteItem" text="Delete"
                                                       onAction="#selectedEventActionsMenuDeleteItemHandler"/>
                                         </items>
                                     </Menu>
                                 </menus>
                             </MenuBar>
-                            <!-- Our 'Detail' view, an accordion of the various event options -->
+                            <!-- Our 'Detail' view -->
                             <TabPane tabClosingPolicy="UNAVAILABLE">
                                 <tabs>
                                     <Tab text="General" closable="false">
                                         <VBox VBox.vgrow="ALWAYS">
 
                                             <ToolBar>
-                                                <ToggleButton text="Enabled" fx:id="selectedEventEnabledToggle"/>
+                                                <ToggleButton text="Enabled" fx:id="eventEditorEnabledToggle"/>
                                                 <ToggleButton text="Auto Restart"
-                                                              fx:id="selectedEventAutoRestartToggle"/>
+                                                              fx:id="eventEditorAutoRestartToggle"/>
                                             </ToolBar>
                                             <VBox>
                                                 <padding>
                                                     <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
                                                 </padding>
                                                 <Label text="Event Name"/>
-                                                <TextField fx:id="selectedEventNameField" promptText="EVENT_NAME"/>
+                                                <TextField fx:id="eventEditorNameField" promptText="EVENT_NAME"/>
                                                 <Label text="Next Trigger Date/Time"/>
-                                                <LocalDateTimeTextField fx:id="selectedEventNextTriggerDateTimeField"/>
+                                                <LocalDateTimeTextField fx:id="eventEditorNextTriggerDateTimeField"/>
                                                 <Label text="Repeat"/>
-                                                <TextField fx:id="selectedEventRepeatField"/>
+                                                <TextField fx:id="eventEditorRepeatField"/>
                                                 <Label text="Interval"/>
-                                                <TextField fx:id="selectedEventIntervalField"/>
+                                                <TextField fx:id="eventEditorIntervalField"/>
                                             </VBox>
                                         </VBox>
                                     </Tab>
                                     <Tab text="Handlers" closable="false">
-
+                                        <SplitPane orientation="VERTICAL">
+                                            <items>
+                                                <TableView fx:id="eventEditorTimerHandlersTable" VBox.vgrow="NEVER">
+                                                    <columns>
+                                                        <TableColumn text="Device Type">
+                                                            <cellValueFactory>
+                                                                <PropertyValueFactory property="deviceType"/>
+                                                            </cellValueFactory>
+                                                        </TableColumn>
+                                                    </columns>
+                                                </TableView>
+                                                <VBox fx:id="handlerEditorVBox" VBox.vgrow="ALWAYS" spacing="5">
+                                                    <padding>
+                                                        <Insets bottom="10" left="10" right="10" top="5"/>
+                                                    </padding>
+                                                </VBox>
+                                            </items>
+                                        </SplitPane>
                                     </Tab>
                                 </tabs>
                             </TabPane>
