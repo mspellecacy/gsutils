@@ -27,6 +27,7 @@ import java.io.IOException;
 /**
  * Created by mspellecacy on 6/6/2016.
  * TODO: This Service doesn't feel very DRY.
+ * TODO: Implement a proper HTTP connection manager instead of just relying on the default manager to shut them down.
  */
 
 public enum GameSenseService {
@@ -138,6 +139,7 @@ public enum GameSenseService {
 
             log.debug("Response Body: {}", EntityUtils.toString(response.getEntity()));
             postSuccess = true;
+            post.releaseConnection();
         } catch (Exception ex) {
             log.error("Error sending game event: {}", ex.getMessage());
         }
@@ -165,6 +167,7 @@ public enum GameSenseService {
 
             EntityUtils.consume(response.getEntity());
             postSuccess = true;
+
         } catch (Exception ex) {
             log.error("Error sending bind game event: {}", ex.getMessage());
         }

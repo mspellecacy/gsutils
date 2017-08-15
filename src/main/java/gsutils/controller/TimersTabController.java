@@ -153,7 +153,7 @@ public class TimersTabController implements Initializable {
                 //Get our selected event to edit...
                 selectedUserTimedEvent = (UserTimedEvent) newSelection;
 
-                //Popular the 'General' Editor Tab..
+                //Populate the 'General' Editor Tab..
                 eventEditorEnabledToggle.setSelected(selectedUserTimedEvent.getEnabled());
                 eventEditorAutoRestartToggle.setSelected(selectedUserTimedEvent.getAutoRestartTimer());
                 eventEditorNameField.setText(selectedUserTimedEvent.getEventName());
@@ -268,6 +268,7 @@ public class TimersTabController implements Initializable {
             default:
                 System.out.println("Pattern Class: " + pattern.getClass().getSimpleName());
         }
+
         saveHandlerButton.addEventHandler(ActionEvent.ACTION, (e) -> {
             GSBindEvent bindEvent = selectedUserTimedEvent.getGameEvent();
             //bindEvent.addEventHandler(selectedUserTimedEventHandler);
@@ -303,15 +304,19 @@ public class TimersTabController implements Initializable {
      * Tab UI/UX Event Handlers...
      ****/
     public void eventEditorActionsMenuSaveItemHandler(ActionEvent actionEvent) {
-        selectedUserTimedEvent.setEnabled(eventEditorEnabledToggle.isSelected());
-        selectedUserTimedEvent.setAutoRestartTimer(eventEditorAutoRestartToggle.isSelected());
-        selectedUserTimedEvent.setEventName(eventEditorNameField.getText());
-        selectedUserTimedEvent.setNextTriggerDateTime(eventEditorNextTriggerDateTimeField.getLocalDateTime());
-        selectedUserTimedEvent.setRepeat(Integer.parseInt(eventEditorRepeatField.getText()));
-        selectedUserTimedEvent.setInterval(Integer.parseInt(eventEditorIntervalField.getText()));
-        userEvents.set(userTimedEventsTable.getSelectionModel().getSelectedIndex(), selectedUserTimedEvent);
-        unregisterEvent(selectedUserTimedEvent);
-        registerEvent(selectedUserTimedEvent);
+        if (selectedUserTimedEvent.getGameEvent().equals("") && selectedUserTimedEvent.getNextTriggerDateTime() != null) {
+            selectedUserTimedEvent.setEnabled(eventEditorEnabledToggle.isSelected());
+            selectedUserTimedEvent.setAutoRestartTimer(eventEditorAutoRestartToggle.isSelected());
+            selectedUserTimedEvent.setEventName(eventEditorNameField.getText());
+            selectedUserTimedEvent.setNextTriggerDateTime(eventEditorNextTriggerDateTimeField.getLocalDateTime());
+            selectedUserTimedEvent.setRepeat(Integer.parseInt(eventEditorRepeatField.getText()));
+            selectedUserTimedEvent.setInterval(Integer.parseInt(eventEditorIntervalField.getText()));
+            userEvents.set(userTimedEventsTable.getSelectionModel().getSelectedIndex(), selectedUserTimedEvent);
+            unregisterEvent(selectedUserTimedEvent);
+            registerEvent(selectedUserTimedEvent);
+        } else {
+
+        }
     }
 
     public void selectedEventActionsMenuSaveAsNewItemHandler(ActionEvent event) {
@@ -374,16 +379,28 @@ public class TimersTabController implements Initializable {
                 }
 
                 protected Void call() throws Exception {
+                    userEvents.stream()
+                            .filter(ue -> (ue.getEnabled() & LocalDateTime.now().isAfter(ue.getNextTriggerDateTime())))
+                            .forEach(ue -> {
+                                sendEvent(ue.getGameEvent());  //Fire off the event...
+                                if (ue.getAutoRestartTimer()) {
+                                    ue.setNextTriggerDateTime(LocalDateTime.now().plusSeconds(ue.getInterval()));
+                                } else {
+                                    ue.setEnabled(false);
+                                }
+                            });
+                    /*  I've decided to use a Java8 stream() instead of this. Not sure its actually made anything better
                     for (UserTimedEvent event : userEvents) {
                         if (event.getEnabled() & LocalDateTime.now().isAfter(event.getNextTriggerDateTime())) {
                             sendEvent(event.getGameEvent());
-                            if (event.getAutoRestartTimer()) {
-                                event.setNextTriggerDateTime(LocalDateTime.now().plusSeconds(event.getInterval()));
-                            } else {
-                                event.setEnabled(false);
-                            }
+                                if (event.getAutoRestartTimer()) {
+                                    event.setNextTriggerDateTime(LocalDateTime.now().plusSeconds(event.getInterval()));
+                                } else {
+                                    event.setEnabled(false);
+                                }
                         }
                     }
+                    */
                     userTimedEventsTable.refresh();
                     return null;
                 }

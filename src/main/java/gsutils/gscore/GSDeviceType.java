@@ -24,7 +24,7 @@ public enum GSDeviceType {
 
     //Misc. (What I actually need for my Rival 700. :D )
     TACTILE("tactile"),
-    SCREENED("screened");
+    SCREENED("screened-128x36");
 
     private String deviceTypeName;
 

@@ -3,7 +3,6 @@ package gsutils.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gsutils.core.UserPreferences;
-import javafx.application.Platform;
 import org.controlsfx.control.Notifications;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,12 +46,12 @@ public enum PreferencesService {
 
         //See if we have a config dir...
         if (!configDir.isDirectory()) {
-            log.info("Config Dir not found, trying to create create: {}", configDir.getAbsolutePath());
+            log.warn("Config Dir not found, trying to create file: {}", configDir.getAbsolutePath());
             if (configDir.mkdir()) {
                 log.info("Config dir created.");
             } else {
-                log.info("Unable to create config dir: {}", configDir.getAbsolutePath());
-                log.info("Won't be able to save preferences.");
+                log.warn("Unable to create config dir: {}", configDir.getAbsolutePath());
+                log.warn("Won't be able to save preferences.");
             }
         }
 

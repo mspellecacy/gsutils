@@ -20,7 +20,10 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
+import java.util.ResourceBundle;
 
 /**
  * Created by mspellecacy on 6/17/2016.
@@ -120,7 +123,7 @@ public class DateTimeTabController implements Initializable {
             gsEventService.cancel();
         }
 
-        log.info("Date/Time Service Running: " + gsEventService.stateProperty());
+        log.info("Date/Time Service Status: " + gsEventService.getState().name());
     }
 
     public void savePrefs(ActionEvent actionEvent) {

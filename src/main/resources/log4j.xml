@@ -11,11 +11,11 @@
     </appender>
 
     <logger name="com.frakle">
-        <level value="INFO"/>
+        <level value="DEBUG"/>
     </logger>
 
     <root>
-        <priority value ="INFO" />
+        <priority value="DEBUG"/>
         <appender-ref ref="console" />
     </root>
 
