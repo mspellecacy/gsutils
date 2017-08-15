@@ -15,8 +15,8 @@ I wanted to put my shiny new toy to some practical use, so I wrote a Java app to
    ![Functional Prototype](http://i.imgur.com/iMbdqrN.png)
     
 ## Downloads
-* [Windows Installer](https://db.tt/vqNwKyVp)
-* [Jar](https://db.tt/7bkyNMnP) 
+* [Windows Installer](http://frakle.com/gsutils/gsutils.exe)
+* [Jar](http://frakle.com/gsutils/gsutils-jar.zip) 
 * (Sorry mac, use the jar? Entirely untested on OSX)
  
  Jar requires [JRE8](http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html)  
