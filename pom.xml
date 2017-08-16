@@ -7,18 +7,19 @@
     <artifactId>gsutils</artifactId>
     <name>gsutils</name>
 
+
     <packaging>jar</packaging>
-    <version>.02-MGSGA</version>
+    <version>.02-DBE</version>
 
     <organization>
-        <!-- Used as the 'Vendor' for JNLP generation -->
         <name>Frakle.com</name>
+        <url>http://www.frakle.com/</url>
     </organization>
 
     <properties>
         <slf4j.version>1.7.12</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
-        <jackson.version>2.6.6</jackson.version>
+        <jackson.version>2.8.0</jackson.version>
     </properties>
 
     <build>
@@ -61,15 +62,55 @@
 
     <dependencies>
 
-        <!-- Jackson -->
+        <!-- Jackson, JSON/XML -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
 
-        <!-- Apache Commons -->
+        <!-- Adds Jackson support for Java8 LocalDateTime -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 
+        <!-- Add some extras to JavaFX -->
+        <dependency>
+            <groupId>org.controlsfx</groupId>
+            <artifactId>controlsfx</artifactId>
+            <version>8.40.10</version>
+        </dependency>
+
+        <!-- Add event more components to JavaFX -->
+        <dependency>
+            <groupId>org.jfxtras</groupId>
+            <artifactId>jfxtras-all</artifactId>
+            <version>8.0-r5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jfxtras</groupId>
+            <artifactId>jfxtras-controls</artifactId>
+            <version>8.0-r5</version>
+        </dependency>
+
+        <!-- Nice fonts and things for JavaFX -->
+        <dependency>
+            <groupId>de.jensd</groupId>
+            <artifactId>fontawesomefx</artifactId>
+            <version>8.9</version>
+            <type>pom</type>
+        </dependency>
+
+        <!-- Stream utility functions -->
+        <dependency>
+            <groupId>com.codepoetics</groupId>
+            <artifactId>protonpack</artifactId>
+            <version>1.9</version>
+        </dependency>
+
+        <!-- Apache Commons -->
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
@@ -77,7 +118,6 @@
         </dependency>
 
         <!-- Logging  -->
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -98,6 +138,8 @@
             <artifactId>log4j</artifactId>
             <version>${log4j.version}</version>
         </dependency>
+
+        <!-- HTTP Services -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>

@@ -17,16 +17,12 @@ public class IndexController implements Initializable {
 
     @FXML private TabPane indexPane;
 
-    public void sayHello() {
-
-    }
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
+        log.info("Main Index Controller loading.");
         indexPane.getSelectionModel().selectedIndexProperty().addListener((ov, oldTab, newTab) -> {
-
-            log.debug("Tab Changed.");
+            //Lambda listens to tab changes.
+            //log.debug("Tab Changed.");
         });
     }
 }

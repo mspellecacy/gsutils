@@ -3,6 +3,7 @@ package gsutils.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gsutils.core.UserPreferences;
+import org.controlsfx.control.Notifications;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,7 @@ public enum PreferencesService {
 
     PreferencesService() {
         log.info("PrefsService Starting...");
+        mapper.findAndRegisterModules();
         loadPreferences();
         loadGameSenseConfig();
     }
@@ -44,13 +46,12 @@ public enum PreferencesService {
 
         //See if we have a config dir...
         if (!configDir.isDirectory()) {
-            log.info("Config Dir not found, trying to create create: {}", configDir.getAbsolutePath());
+            log.warn("Config Dir not found, trying to create file: {}", configDir.getAbsolutePath());
             if (configDir.mkdir()) {
                 log.info("Config dir created.");
             } else {
-                //TODO: Add graceful exit for this...
-                log.info("Unable to create config dir: ");
-                loadedSuccessfully = false;
+                log.warn("Unable to create config dir: {}", configDir.getAbsolutePath());
+                log.warn("Won't be able to save preferences.");
             }
         }
 
@@ -88,6 +89,7 @@ public enum PreferencesService {
         } catch (IOException e) {
             log.error("Error Saving Preferences: {}", e.getMessage());
         }
+        Notifications.create().title("GSUtils").text("Your Preferences have been saved.").show();
     }
 
     public void loadGameSenseConfig() {

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import jfxtras.scene.control.LocalDateTimeTextField?>
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8" minWidth="300" minHeight="400">
+    <padding>
+        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+    </padding>
+
+    <center>
+        <VBox>
+            <padding>
+                <Insets bottom="-2.0" left="-2.0" right="-2.0" top="-2.0"/>
+            </padding>
+            <Accordion>
+                <panes>
+                    <TitledPane text="General" expanded="true">
+                        <VBox VBox.vgrow="ALWAYS">
+                            <ToolBar>
+                                <padding>
+                                    <Insets bottom="0.0" left="0.0" right="0.0" top="0.0"/>
+                                </padding>
+                                <ToggleButton fx:id="enabledToggle" text=""
+                                              style="-fx-font: 22 FontAwesome; -fx-base: #xf0c7;"/>
+                                <ToggleButton text="Auto Restart" fx:id="autoRestartTimerToggle"/>
+                            </ToolBar>
+
+                            <Label text="Event Name"/>
+                            <TextField fx:id="eventNameField" promptText="EVENT_NAME"/>
+                            <Label text="Next Trigger Date/Time"/>
+                            <LocalDateTimeTextField fx:id="nextTriggerDateTimeField"/>
+                            <Label text="Auto Restart"/>
+
+                            <Label text="Repeat"/>
+                            <TextField fx:id="repeat"/>
+                            <Label text="Interval"/>
+                            <TextField fx:id="Interval"/>
+                        </VBox>
+                    </TitledPane>
+                    <TitledPane text="Handlers">
+                        <VBox VBox.vgrow="ALWAYS">
+                            <TableView fx:id="timerHandlers" VBox.vgrow="ALWAYS">
+
+                            </TableView>
+                        </VBox>
+                    </TitledPane>
+                </panes>
+            </Accordion>
+        </VBox>
+
+    </center>
+    <bottom>
+        <BorderPane>
+            <left>
+                <HBox spacing="10.0">
+                    <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+                    </padding>
+
+                    <Button fx:id="savePrefsButton" text="Save"/>
+                </HBox>
+            </left>
+            <right>
+                <HBox spacing="10.0">
+                    <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+                    </padding>
+                    <Button fx:id="removeTimerButton" text="Delete"/>
+                </HBox>
+            </right>
+        </BorderPane>
+    </bottom>
+</BorderPane>

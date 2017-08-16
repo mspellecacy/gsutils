@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.layout.*?>
+<?import jfxtras.scene.control.LocalDateTimeTextField?>
+<Tab closable="false" text="Timers" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
+     fx:controller="gsutils.controller.TimersTabController">
+    <content>
+        <BorderPane fx:id="timersBorderPane">
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+            <top>
+                <BorderPane>
+                    <left>
+                        <HBox spacing="10.0">
+                            <padding>
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+                            </padding>
+                            <Label style="-fx-font: NORMAL 20 Tahoma;" text="Timers Pool" HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="savePrefsButton" text="Save" onAction="#savePrefs"/>
+                            <ToggleButton fx:id="toggleServiceButton" text="OFF" onAction="#toggleGSEvents"/>
+                        </HBox>
+                    </left>
+                    <right>
+                        <Button fx:id="addTimerButton" text="Add Timer"/>
+                    </right>
+                </BorderPane>
+            </top>
+            <center>
+                <SplitPane orientation="HORIZONTAL">
+                    <items>
+                        <!-- Our 'Master' view, a list of our Events -->
+                        <TableView fx:id="userTimedEventsTable" editable="true">
+                            <columns>
+                                <TableColumn text="Name">
+                                    <cellValueFactory>
+                                        <PropertyValueFactory property="eventName"/>
+                                    </cellValueFactory>
+                                </TableColumn>
+                                <TableColumn text="Next Trigger Date/Time">
+                                    <cellValueFactory>
+                                        <PropertyValueFactory property="nextTriggerDateTime"/>
+                                    </cellValueFactory>
+                                </TableColumn>
+                                <!-- Too much for default table...
+                                <TableColumn text="Enabled">
+                                    <cellValueFactory>
+                                        <PropertyValueFactory property="enabled"/>
+                                    </cellValueFactory>
+                                </TableColumn>
+
+                                <TableColumn text="Auto Restart">
+                                    <cellValueFactory>
+                                        <PropertyValueFactory property="autoRestartTimer"/>
+                                    </cellValueFactory>
+                                </TableColumn>
+                                <TableColumn text="Interval (sec)">
+                                    <cellValueFactory>
+                                        <PropertyValueFactory property="interval"/>
+                                    </cellValueFactory>
+                                </TableColumn>
+                                -->
+                            </columns>
+                        </TableView>
+                        <VBox>
+                            <padding>
+                                <Insets bottom="0" left="0.0" right="0.0" top="0"/>
+                            </padding>
+                            <MenuBar>
+                                <menus>
+                                    <Menu fx:id="selectEventActionsMenu" text="Actions">
+                                        <items>
+                                            <MenuItem fx:id="eventEditorActionsMenuSaveItem" text="Save"
+                                                      onAction="#eventEditorActionsMenuSaveItemHandler"></MenuItem>
+                                            <MenuItem fx:id="eventEditorActionsMenuSaveAsNewItem" text="Save as New"
+                                                      onAction="#selectedEventActionsMenuSaveAsNewItemHandler"/>
+                                            <MenuItem fx:id="eventEditorActionsMenuDeleteItem" text="Delete"
+                                                      onAction="#selectedEventActionsMenuDeleteItemHandler"/>
+                                        </items>
+                                    </Menu>
+                                </menus>
+                            </MenuBar>
+                            <!-- Our 'Detail' view -->
+                            <TabPane tabClosingPolicy="UNAVAILABLE">
+                                <tabs>
+                                    <Tab text="General" closable="false">
+                                        <VBox VBox.vgrow="ALWAYS">
+
+                                            <ToolBar>
+                                                <ToggleButton text="Enabled" fx:id="eventEditorEnabledToggle"/>
+                                                <ToggleButton text="Auto Restart"
+                                                              fx:id="eventEditorAutoRestartToggle"/>
+                                            </ToolBar>
+                                            <VBox>
+                                                <padding>
+                                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+                                                </padding>
+                                                <Label text="Event Name"/>
+                                                <TextField fx:id="eventEditorNameField" promptText="EVENT_NAME"/>
+                                                <Label text="Next Trigger Date/Time"/>
+                                                <LocalDateTimeTextField fx:id="eventEditorNextTriggerDateTimeField"/>
+                                                <Label text="Repeat"/>
+                                                <TextField fx:id="eventEditorRepeatField"/>
+                                                <Label text="Interval"/>
+                                                <TextField fx:id="eventEditorIntervalField"/>
+                                            </VBox>
+                                        </VBox>
+                                    </Tab>
+                                    <Tab text="Handlers" closable="false">
+                                        <SplitPane orientation="VERTICAL">
+                                            <items>
+                                                <TableView fx:id="eventEditorTimerHandlersTable" VBox.vgrow="NEVER">
+                                                    <columns>
+                                                        <TableColumn text="Device Type">
+                                                            <cellValueFactory>
+                                                                <PropertyValueFactory property="deviceType"/>
+                                                            </cellValueFactory>
+                                                        </TableColumn>
+                                                    </columns>
+                                                </TableView>
+                                                <VBox fx:id="handlerEditorVBox" VBox.vgrow="ALWAYS" spacing="5">
+                                                    <padding>
+                                                        <Insets bottom="10" left="10" right="10" top="5"/>
+                                                    </padding>
+                                                </VBox>
+                                            </items>
+                                        </SplitPane>
+                                    </Tab>
+                                </tabs>
+                            </TabPane>
+                        </VBox>
+                    </items>
+                </SplitPane>
+            </center>
+        </BorderPane>
+    </content>
+</Tab>

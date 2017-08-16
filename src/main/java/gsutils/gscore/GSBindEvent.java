@@ -1,6 +1,5 @@
 package gsutils.gscore;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -24,6 +23,11 @@ public class GSBindEvent {
     private GSEventHandler[] eventHandlers;
 
     public GSBindEvent() {
+    }
+
+    public GSBindEvent(String game, String event) {
+        this.game = game;
+        this.event = event;
     }
 
     public String getGame() {

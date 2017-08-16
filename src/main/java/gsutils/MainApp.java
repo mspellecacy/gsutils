@@ -6,24 +6,21 @@ import gsutils.service.HostServicesService;
 import gsutils.service.PreferencesService;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MainApp extends Application {
 
+    private static final String APP_NAME = "GSUtils";
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
     private final GameSenseService gsService = GameSenseService.INSTANCE;
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
 
-
-    //TODO: Refactor all singletons in to enum pattern.
     public static void main(String[] args) throws Exception {
         launch(args);
     }
@@ -32,8 +29,9 @@ public class MainApp extends Application {
         log.info("Starting GSUtils");
 
         //First we must setup our endpoint.
-        gsService.setGameSenseHost("HTTP://"+prefsService.getGameSenseEndpoint());
-
+        String gsEndpoint = "HTTP://"+prefsService.getGameSenseEndpoint();
+        gsService.setGameSenseHost(gsEndpoint);
+        log.info("GameSense Endpoint: {}", gsEndpoint);
 
         //Second thing, register our 'game' with the GameSense Engine.
         GSGameRegistration gameRegistration = new GSGameRegistration();
@@ -50,9 +48,9 @@ public class MainApp extends Application {
 
         //Finally build and show our scene on the main stage.
         log.debug("Showing JFX scene");
-        Scene scene = new Scene(rootNode, 600, 400);
+        Scene scene = new Scene(rootNode, 800, 600);
         scene.getStylesheets().add("/styles/styles.css");
-        stage.setTitle("GSUtils - Make GameSense Great Again");
+        stage.setTitle("GSUtils - Don't be Evil");
         stage.setScene(scene);
         stage.show();
 
