@@ -22,7 +22,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
+import java.util.ResourceBundle;
 
 /**
  * Created by mspellecacy on 6/10/2016.
@@ -216,7 +219,7 @@ public class SystemStatsTabController implements Initializable {
                         gsEvent.setData(outputMap);
 
                         //Push Game Sense event
-                        gsService.sendGameEvent(gsEvent);
+                        gsService.queueGameEvent(gsEvent, 1000);
 
                     }
 

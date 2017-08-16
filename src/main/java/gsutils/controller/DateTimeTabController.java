@@ -181,7 +181,7 @@ public class DateTimeTabController implements Initializable {
                     gsEvent.setData(outputMap);
 
                     //Push Game Sense event
-                    gsService.sendGameEvent(gsEvent);
+                    gsService.queueGameEvent(gsEvent, 1000);
 
                     //Update our preview regardless.
                     Platform.runLater(() -> updatePreviewLabel());

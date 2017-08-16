@@ -20,7 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
+import java.util.ResourceBundle;
 
 /**
  * Created by mspellecacy on 6/12/2016.
@@ -235,7 +238,6 @@ public class WeatherTabController implements Initializable {
         protected Task<Void> createTask() {
             return new Task<Void>() {
                 protected Void call() throws Exception {
-                    log.info("Pushing GS Events");
                     //Get our output string
                     String dataValue = outputString.getText();
 
@@ -267,7 +269,7 @@ public class WeatherTabController implements Initializable {
                     gsEvent.setData(outputMap);
 
                     //Push Game Sense event
-                    gsService.sendGameEvent(gsEvent);
+                    gsService.queueGameEvent(gsEvent, 1000);
 
                     return null;
                 }

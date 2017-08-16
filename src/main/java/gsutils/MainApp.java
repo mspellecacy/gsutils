@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 public class MainApp extends Application {
 
+    private static final String APP_NAME = "GSUtils";
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
     private final GameSenseService gsService = GameSenseService.INSTANCE;

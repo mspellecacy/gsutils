@@ -98,15 +98,14 @@ public class TimersTabController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
         if (prefsService.getUserPrefs().getUserTimedEvents() != null) {
-            //Loop over all of our saved events a make sure they're bound.
-            ArrayList<UserTimedEvent> events = prefsService.getUserPrefs().getUserTimedEvents();
-            for (UserTimedEvent event : events) {
-                log.info("Adding UserTimedEvent:{ eventName: {} }",
-                        event.getEventName());
-                registerEvent(event);
-            }
 
-            //Add all our saved events to the Timers Pool.
+            //Fetch our saved events
+            ArrayList<UserTimedEvent> events = prefsService.getUserPrefs().getUserTimedEvents();
+
+            //Re-register/Update all our saved events to GameSense Host.
+            pushUserTimedEventsToHost(events);
+
+            //Add all our saved events to the Registered Timers Pool.
             userEvents.setAll(events);
         } else { //We're gonna inject a default event if they don't have any yet.
             log.info("Adding new default event for user...");
@@ -216,6 +215,13 @@ public class TimersTabController implements Initializable {
 
         gsEventService.setPeriod(Duration.seconds(1));  //Check every second, regardless.
 
+    }
+
+    private void pushUserTimedEventsToHost(ArrayList<UserTimedEvent> events) {
+        for (UserTimedEvent event : events) {
+            log.info("Pushing UserTimedEvent:{ eventName: {} }", event.getEventName());
+            registerEvent(event);
+        }
     }
 
     /****
@@ -339,6 +345,10 @@ public class TimersTabController implements Initializable {
         prefsService.getUserPrefs().setRunUserTimedEvents(toggleServiceButton.isSelected());
         prefsService.getUserPrefs().setUserTimedEvents(new ArrayList<>(userEvents));
         prefsService.savePreferences();
+
+        //Also push our changes to the remote host.
+        pushUserTimedEventsToHost(new ArrayList<>(userEvents));
+
     }
 
     public void toggleGSEvents(ActionEvent actionEvent) {
@@ -383,6 +393,7 @@ public class TimersTabController implements Initializable {
                             .filter(ue -> (ue.getEnabled() & LocalDateTime.now().isAfter(ue.getNextTriggerDateTime())))
                             .forEach(ue -> {
                                 sendEvent(ue.getGameEvent());  //Fire off the event...
+
                                 if (ue.getAutoRestartTimer()) {
                                     ue.setNextTriggerDateTime(LocalDateTime.now().plusSeconds(ue.getInterval()));
                                 } else {

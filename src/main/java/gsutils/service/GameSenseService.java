@@ -9,10 +9,13 @@ import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
+import gsutils.core.QueuedEvent;
 import gsutils.gscore.GSBindEvent;
 import gsutils.gscore.GSEventRegistration;
 import gsutils.gscore.GSGameEvent;
 import gsutils.gscore.GSGameRegistration;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -23,6 +26,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by mspellecacy on 6/6/2016.
@@ -34,6 +42,7 @@ public enum GameSenseService {
     INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(GameSenseService.class);
+    private static final BlockingQueue<QueuedEvent> gsEventsQueue = new ArrayBlockingQueue<>(10);
 
     private static String GAME_EVENT_PATH = "/game_event";
     private static String REGISTER_GAME_PATH = "/game_metadata";
@@ -44,6 +53,7 @@ public enum GameSenseService {
 
     private String gameSenseHost = "http://127.0.0.1:52083";
 
+    private GSEventService gsEventService = new GSEventService();
     private ObjectMapper mapper = new ObjectMapper();
 
     GameSenseService() {
@@ -63,6 +73,10 @@ public enum GameSenseService {
         };
 
         mapper.setAnnotationIntrospector(serializeAnnotationIntrospector);
+
+        //Setup our basic event queue service
+        //gsEventService.setPeriod(Duration.seconds(1));
+        gsEventService.start();
 
     }
 
@@ -122,6 +136,18 @@ public enum GameSenseService {
         }
 
         return postSuccess;
+    }
+
+    public void queueGameEvent(GSGameEvent event, long delay) {
+        QueuedEvent qe = new QueuedEvent(event, delay);  // 1 second
+        if (!gsEventsQueue.contains(qe))
+            gsEventsQueue.offer(qe);
+    }
+
+    public void queueGameEvent(GSGameEvent event) {
+        QueuedEvent qe = new QueuedEvent(event, 1000);  // 1 second
+        if (!gsEventsQueue.contains(qe))
+            gsEventsQueue.offer(qe);
     }
 
     public Boolean sendGameEvent(GSGameEvent gsGameEvent) {
@@ -227,6 +253,30 @@ public enum GameSenseService {
         }
 
         return postSuccess;
+    }
+
+
+    private class GSEventService extends Service<Void> {
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    try {
+                        for (; ; ) {
+                            final Collection<QueuedEvent> expired = new ArrayList<>();
+                            gsEventsQueue.drainTo(expired);
+
+                            sendGameEvent(gsEventsQueue.take().getEvent());
+                            log.info("Current time: {}", LocalDateTime.now());
+
+                            Thread.currentThread().sleep(2000);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return null;
+                }
+            };
+        }
     }
 
 }
