@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 /**
  * Created by mspellecacy on 6/14/2016.
  */
-public enum  GSTactileZones implements GSDeviceZone{
+public enum GSTactileZones implements GSDeviceZone {
 
     //I guess 'zones' is a bit dramatic here.
     ONE("one");

@@ -22,7 +22,7 @@ public class UserTimedEventEditorPopOverController implements Initializable {
     @FXML
     LocalDateTimeTextField nextTriggerDateTimeField;
 
-    UserTimedEventEditorPopOverController(UserTimedEvent userEvent){
+    UserTimedEventEditorPopOverController(UserTimedEvent userEvent) {
         this.userEvent = userEvent;
     }
 
@@ -32,7 +32,7 @@ public class UserTimedEventEditorPopOverController implements Initializable {
         updateFields();
     }
 
-    public void initData(UserTimedEvent userEvent){
+    public void initData(UserTimedEvent userEvent) {
         this.userEvent = userEvent;
         updateFields();
     }

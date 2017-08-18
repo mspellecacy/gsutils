@@ -7,7 +7,8 @@ public class GSRate {
     private Integer frequency;
     private Integer repeat_limit;
 
-    public GSRate(){}
+    public GSRate() {
+    }
 
     public GSRate(Integer frequency, Integer repeat_limit) {
         this.frequency = frequency;

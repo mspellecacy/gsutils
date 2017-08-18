@@ -14,8 +14,9 @@ import gsutils.gscore.GSBindEvent;
 import gsutils.gscore.GSEventRegistration;
 import gsutils.gscore.GSGameEvent;
 import gsutils.gscore.GSGameRegistration;
-import javafx.concurrent.Service;
+import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
+import javafx.util.Duration;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -27,8 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -44,17 +44,16 @@ public enum GameSenseService {
     private static final Logger log = LoggerFactory.getLogger(GameSenseService.class);
     private static final BlockingQueue<QueuedEvent> gsEventsQueue = new ArrayBlockingQueue<>(10);
 
-    private static String GAME_EVENT_PATH = "/game_event";
-    private static String REGISTER_GAME_PATH = "/game_metadata";
-    private static String REGISTER_GAME_EVENT_PATH = "/register_game_event";
-    private static String BIND_GAME_EVENT_PATH = "/bind_game_event";
-    private static String REMOVE_EVENT_PATH = "/remove_game_event";
-    private static String REMOVE_GAME_PATH = "/remove_game";
+    private static final String GAME_EVENT_PATH = "/game_event";
+    private static final String REGISTER_GAME_PATH = "/game_metadata";
+    private static final String REGISTER_GAME_EVENT_PATH = "/register_game_event";
+    private static final String BIND_GAME_EVENT_PATH = "/bind_game_event";
+    private static final String REMOVE_EVENT_PATH = "/remove_game_event";
+    private static final String REMOVE_GAME_PATH = "/remove_game";
+    private final GSEventService gsEventService = new GSEventService();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     private String gameSenseHost = "http://127.0.0.1:52083";
-
-    private GSEventService gsEventService = new GSEventService();
-    private ObjectMapper mapper = new ObjectMapper();
 
     GameSenseService() {
         mapper.findAndRegisterModules();
@@ -75,7 +74,7 @@ public enum GameSenseService {
         mapper.setAnnotationIntrospector(serializeAnnotationIntrospector);
 
         //Setup our basic event queue service
-        //gsEventService.setPeriod(Duration.seconds(1));
+        gsEventService.setPeriod(Duration.seconds(2));
         gsEventService.start();
 
     }
@@ -113,6 +112,7 @@ public enum GameSenseService {
         return postSuccess;
     }
 
+    // TODO: Implement Quality-of-Life Utilities Menu for doing app maintenance against the GameSense Host
     public Boolean unregisterGame(GSGameRegistration gsGameRegistration) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;
@@ -177,8 +177,6 @@ public enum GameSenseService {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;
         final ObjectWriter w = mapper.writer();
-
-
 
         try {
             HttpPost post = new HttpPost(gameSenseHost + BIND_GAME_EVENT_PATH);
@@ -255,27 +253,32 @@ public enum GameSenseService {
         return postSuccess;
     }
 
+    private class GSEventService extends ScheduledService<Void> {
 
-    private class GSEventService extends Service<Void> {
+        // TODO? This seems entirely too coupled and brittle.
+        // We create a simple list of our output options way outside of the task scope.
+        private final List<String> outputRotation = Arrays.asList("DATETIME", "SYSTEM", "WEATHER");
+
         protected Task<Void> createTask() {
             return new Task<Void>() {
                 protected Void call() throws Exception {
-                    try {
-                        for (; ; ) {
-                            final Collection<QueuedEvent> expired = new ArrayList<>();
-                            gsEventsQueue.drainTo(expired);
+                    log.debug("Current time: {} Queue Size: {}", new Object[]{LocalDateTime.now(), gsEventsQueue.size()});
+                    ArrayList<QueuedEvent> queuedEvents = new ArrayList<>();
+                    gsEventsQueue.drainTo(queuedEvents);
 
-                            sendGameEvent(gsEventsQueue.take().getEvent());
-                            log.info("Current time: {}", LocalDateTime.now());
-
-                            Thread.currentThread().sleep(2000);
+                    for (QueuedEvent qe : queuedEvents) {
+                        GSGameEvent event = qe.getEvent();
+                        log.debug("Event: " + event.getEvent() + " Payload: " + event.getData().get("value"));
+                        if (Objects.equals(event.getEvent(), outputRotation.get(0))) {
+                            sendGameEvent(event);
+                            Collections.rotate(outputRotation, -1); //Rotate our output option
+                            break; // break out of this loop, ready to start anew.
                         }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
                     }
                     return null;
                 }
             };
+
         }
     }
 

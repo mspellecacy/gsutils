@@ -1,9 +1,7 @@
 package gsutils.gscore;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.annotation.JsonSetter;
 
 /**
  * Created by mspellecacy on 7/9/2016.
@@ -34,6 +32,7 @@ public class GSTactileEventHandler implements GSEventHandler {
     public String getMode() {
         return "vibrate";
     }
+
     public void setMode(String mode) {
         this.mode = mode;
     }
@@ -41,6 +40,7 @@ public class GSTactileEventHandler implements GSEventHandler {
     public GSPattern[] getPattern() {
         return pattern;
     }
+
     public void setPattern(GSPattern[] pattern) {
         this.pattern = pattern;
     }

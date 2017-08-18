@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class MainApp extends Application {
 
     private static final String APP_NAME = "GSUtils";
+    private static final String BUILD_NAME = "Moby Dick";
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
     private final GameSenseService gsService = GameSenseService.INSTANCE;
@@ -29,7 +30,7 @@ public class MainApp extends Application {
         log.info("Starting GSUtils");
 
         //First we must setup our endpoint.
-        String gsEndpoint = "HTTP://"+prefsService.getGameSenseEndpoint();
+        String gsEndpoint = "HTTP://" + prefsService.getGameSenseEndpoint();
         gsService.setGameSenseHost(gsEndpoint);
         log.info("GameSense Endpoint: {}", gsEndpoint);
 
@@ -50,7 +51,7 @@ public class MainApp extends Application {
         log.debug("Showing JFX scene");
         Scene scene = new Scene(rootNode, 800, 600);
         scene.getStylesheets().add("/styles/styles.css");
-        stage.setTitle("GSUtils - Don't be Evil");
+        stage.setTitle(APP_NAME + " - Build: " + BUILD_NAME + " - GameSense Endpoint: " + gsService.getGameSenseHost());
         stage.setScene(scene);
         stage.show();
 

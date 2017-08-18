@@ -1,7 +1,7 @@
-<?import javafx.scene.control.*?>
+<?import javafx.scene.control.TabPane?>
 <TabPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" fx:id="indexPane" fx:controller="gsutils.controller.IndexController" xmlns:fx="http://javafx.com/fxml">
     <tabs>
-        <fx:include fx:id="timersTab" source="/fxml/timersTab.fxml" />
+        <fx:include fx:id="timersTab" source="/fxml/timersTab.fxml"/>
         <fx:include fx:id="dateTimeTab" source="/fxml/datetimeTab.fxml"/>
         <fx:include fx:id="systemStatsTab" source="/fxml/systemStatsTab.fxml"/>
         <fx:include fx:id="weatherTab" source="/fxml/weatherTab.fxml"/>
