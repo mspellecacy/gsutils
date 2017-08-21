@@ -284,8 +284,7 @@ public class TimersTabController implements Initializable {
 
             bindEvent.setEventHandlers(tempList.toArray(new GSEventHandler[0]));
 
-            UserTimedEvent ute = (UserTimedEvent) userTimedEventsTable.getSelectionModel().getSelectedItem();
-            selectedUserTimedEvent = ute;
+            selectedUserTimedEvent = (UserTimedEvent) userTimedEventsTable.getSelectionModel().getSelectedItem();
 
             //Piggyback on our save event...
             eventEditorActionsMenuSaveItemHandler(new ActionEvent());
@@ -320,8 +319,6 @@ public class TimersTabController implements Initializable {
             userEvents.set(userTimedEventsTable.getSelectionModel().getSelectedIndex(), selectedUserTimedEvent);
             unregisterEvent(selectedUserTimedEvent);
             registerEvent(selectedUserTimedEvent);
-        } else {
-
         }
     }
 
@@ -363,7 +360,7 @@ public class TimersTabController implements Initializable {
             gsEventService.cancel();
         }
 
-        log.info("Timers Service Running: " + gsEventService.isRunning());
+        log.info("Timers Service Status: {}", gsEventService.isRunning());
     }
 
     private class GSEventService extends ScheduledService<Void> {
@@ -389,6 +386,7 @@ public class TimersTabController implements Initializable {
                 }
 
                 protected Void call() throws Exception {
+                    /*
                     userEvents.stream()
                             .filter(ue -> (ue.getEnabled() & LocalDateTime.now().isAfter(ue.getNextTriggerDateTime())))
                             .forEach(ue -> {
@@ -400,7 +398,8 @@ public class TimersTabController implements Initializable {
                                     ue.setEnabled(false);
                                 }
                             });
-                    /*  I've decided to use a Java8 stream() instead of this. Not sure its actually made anything better
+                    */
+                    /*  I've decided to use a Java8 stream() instead of this. Not sure its actually made anything better */
                     for (UserTimedEvent event : userEvents) {
                         if (event.getEnabled() & LocalDateTime.now().isAfter(event.getNextTriggerDateTime())) {
                             sendEvent(event.getGameEvent());
@@ -411,7 +410,7 @@ public class TimersTabController implements Initializable {
                                 }
                         }
                     }
-                    */
+
                     userTimedEventsTable.refresh();
                     return null;
                 }

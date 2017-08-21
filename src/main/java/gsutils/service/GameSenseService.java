@@ -9,14 +9,10 @@ import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.Annotated;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
-import gsutils.core.QueuedEvent;
 import gsutils.gscore.GSBindEvent;
 import gsutils.gscore.GSEventRegistration;
 import gsutils.gscore.GSGameEvent;
 import gsutils.gscore.GSGameRegistration;
-import javafx.concurrent.ScheduledService;
-import javafx.concurrent.Task;
-import javafx.util.Duration;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -27,10 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by mspellecacy on 6/6/2016.
@@ -42,7 +34,6 @@ public enum GameSenseService {
     INSTANCE;
 
     private static final Logger log = LoggerFactory.getLogger(GameSenseService.class);
-    private static final BlockingQueue<QueuedEvent> gsEventsQueue = new ArrayBlockingQueue<>(10);
 
     private static final String GAME_EVENT_PATH = "/game_event";
     private static final String REGISTER_GAME_PATH = "/game_metadata";
@@ -50,9 +41,7 @@ public enum GameSenseService {
     private static final String BIND_GAME_EVENT_PATH = "/bind_game_event";
     private static final String REMOVE_EVENT_PATH = "/remove_game_event";
     private static final String REMOVE_GAME_PATH = "/remove_game";
-    private final GSEventService gsEventService = new GSEventService();
     private final ObjectMapper mapper = new ObjectMapper();
-
     private String gameSenseHost = "http://127.0.0.1:52083";
 
     GameSenseService() {
@@ -72,10 +61,6 @@ public enum GameSenseService {
         };
 
         mapper.setAnnotationIntrospector(serializeAnnotationIntrospector);
-
-        //Setup our basic event queue service
-        gsEventService.setPeriod(Duration.seconds(2));
-        gsEventService.start();
 
     }
 
@@ -138,17 +123,6 @@ public enum GameSenseService {
         return postSuccess;
     }
 
-    public void queueGameEvent(GSGameEvent event, long delay) {
-        QueuedEvent qe = new QueuedEvent(event, delay);  // 1 second
-        if (!gsEventsQueue.contains(qe))
-            gsEventsQueue.offer(qe);
-    }
-
-    public void queueGameEvent(GSGameEvent event) {
-        QueuedEvent qe = new QueuedEvent(event, 1000);  // 1 second
-        if (!gsEventsQueue.contains(qe))
-            gsEventsQueue.offer(qe);
-    }
 
     public Boolean sendGameEvent(GSGameEvent gsGameEvent) {
         HttpClient httpClient = HttpClientBuilder.create().build();
@@ -253,33 +227,7 @@ public enum GameSenseService {
         return postSuccess;
     }
 
-    private class GSEventService extends ScheduledService<Void> {
-
-        // TODO? This seems entirely too coupled and brittle.
-        // We create a simple list of our output options way outside of the task scope.
-        private final List<String> outputRotation = Arrays.asList("DATETIME", "SYSTEM", "WEATHER");
-
-        protected Task<Void> createTask() {
-            return new Task<Void>() {
-                protected Void call() throws Exception {
-                    log.debug("Current time: {} Queue Size: {}", new Object[]{LocalDateTime.now(), gsEventsQueue.size()});
-                    ArrayList<QueuedEvent> queuedEvents = new ArrayList<>();
-                    gsEventsQueue.drainTo(queuedEvents);
-
-                    for (QueuedEvent qe : queuedEvents) {
-                        GSGameEvent event = qe.getEvent();
-                        log.debug("Event: " + event.getEvent() + " Payload: " + event.getData().get("value"));
-                        if (Objects.equals(event.getEvent(), outputRotation.get(0))) {
-                            sendGameEvent(event);
-                            Collections.rotate(outputRotation, -1); //Rotate our output option
-                            break; // break out of this loop, ready to start anew.
-                        }
-                    }
-                    return null;
-                }
-            };
-
-        }
-    }
 
 }
+
+

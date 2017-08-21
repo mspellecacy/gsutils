@@ -17,16 +17,14 @@ import java.util.Map;
 public enum PreferencesService {
     INSTANCE;
 
-    private Logger log = LoggerFactory.getLogger(PreferencesService.class);
+    private final Logger log = LoggerFactory.getLogger(PreferencesService.class);
 
-    private String dirSeparator = System.getProperty("file.separator");
-    private String userHome = System.getProperty("user.home");
-    private String prefsDir = ".gsutils";
-    private String prefsFileName = "preferences.json";
-    private String programDataDir = System.getenv("PROGRAMDATA");
+    private final String dirSeparator = System.getProperty("file.separator");
+    private final String userHome = System.getProperty("user.home");
+    private final String programDataDir = System.getenv("PROGRAMDATA");
     private String gameSenseEndpoint = "";
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
     private UserPreferences userPrefs;
     private File prefsFile;
 
@@ -38,10 +36,12 @@ public enum PreferencesService {
         loadGameSenseConfig();
     }
 
-    public Boolean loadPreferences() {
+    private Boolean loadPreferences() {
         boolean loadedSuccessfully;
+        String prefsDir = ".gsutils";
         String dir = userHome + dirSeparator + prefsDir + dirSeparator;
         File configDir = new File(dir);
+        String prefsFileName = "preferences.json";
         prefsFile = new File(dir + prefsFileName);
 
         //See if we have a config dir...
@@ -92,7 +92,7 @@ public enum PreferencesService {
         Notifications.create().title("GSUtils").text("Your Preferences have been saved.").show();
     }
 
-    public void loadGameSenseConfig() {
+    private void loadGameSenseConfig() {
 
         File propsFile = new File( programDataDir + dirSeparator +"SteelSeries"+ dirSeparator +"SteelSeries Engine 3"+ dirSeparator +"coreProps.json" );
 

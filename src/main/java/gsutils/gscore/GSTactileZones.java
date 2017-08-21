@@ -8,12 +8,12 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum GSTactileZones implements GSDeviceZone {
 
     //I guess 'zones' is a bit dramatic here.
-    ONE("one");
+    ONE();
 
-    private String zoneName;
+    private final String zoneName;
 
-    GSTactileZones(String zoneName) {
-        this.zoneName = zoneName;
+    GSTactileZones() {
+        this.zoneName = "one";
     }
 
     @JsonValue

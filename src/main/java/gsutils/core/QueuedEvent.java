@@ -5,7 +5,7 @@ import gsutils.gscore.GSGameEvent;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-public class QueuedEvent implements Delayed {
+class QueuedEvent implements Delayed {
 
     private final long origin;
     private final long delay;

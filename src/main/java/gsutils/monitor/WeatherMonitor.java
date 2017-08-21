@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
 
 /**
  * Created by mspellecacy on 6/12/2016.
@@ -24,7 +23,7 @@ public class WeatherMonitor {
     private static final Logger log = LoggerFactory.getLogger(WeatherMonitor.class);
     private static final String OWM_API = "http://api.openweathermap.org/data/2.5/weather";
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
     private String owmApiKey;
 
     public WeatherMonitor(String owmApiKey) {
@@ -51,8 +50,7 @@ public class WeatherMonitor {
             HttpResponse response = httpClient.execute(zipQueryGet);
             String respBody = EntityUtils.toString(response.getEntity());
             weatherObj = mapper.readValue(respBody, new TypeReference<Map<String, Object>>() {});
-
-            log.info(respBody);
+            log.debug("API Response: " + respBody);
         } catch (IOException e) {
             log.error("Error in Fetch: "+e.getMessage());
         }
@@ -66,7 +64,7 @@ public class WeatherMonitor {
         METRIC("metric"),
         IMPERIAL("imperial");
 
-        private String unitName;
+        private final String unitName;
 
         WeatherUnit(String deviceTypeName) {
             this.unitName = deviceTypeName;

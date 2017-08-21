@@ -3,7 +3,7 @@ package gsutils.gscore;
 /**
  * Created by mspellecacy on 7/10/2016.
  */
-public class GSRangeFrequency {
+class GSRangeFrequency {
 
     private Integer low;
     private Integer high;

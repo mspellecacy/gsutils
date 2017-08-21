@@ -13,13 +13,15 @@ import java.util.ResourceBundle;
 /**
  * Created by mspellecacy on 7/19/2016.
  */
-public class UserTimedEventEditorPopOverController implements Initializable {
+class UserTimedEventEditorPopOverController implements Initializable {
     private UserTimedEvent userEvent = new UserTimedEvent();
 
     @FXML
+    private
     TextField eventNameField;
 
     @FXML
+    private
     LocalDateTimeTextField nextTriggerDateTimeField;
 
     UserTimedEventEditorPopOverController(UserTimedEvent userEvent) {

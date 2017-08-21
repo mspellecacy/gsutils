@@ -14,7 +14,9 @@ import static javax.management.ObjectName.getInstance;
  */
 public class HostMonitor {
     private static final Logger log = LoggerFactory.getLogger(HostMonitor.class);
+    @SuppressWarnings("CanBeFinal")
     private static MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    @SuppressWarnings("CanBeFinal")
     private static ObjectName osAttrs;
 
     static {

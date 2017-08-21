@@ -8,12 +8,12 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum GSScreenedZones implements GSDeviceZone {
 
     //I guess 'zones' is a bit dramatic here.
-    ONE("one");
+    ONE();
 
-    private String zoneName;
+    private final String zoneName;
 
-    GSScreenedZones(String zoneName) {
-        this.zoneName = zoneName;
+    GSScreenedZones() {
+        this.zoneName = "one";
     }
 
     @JsonValue

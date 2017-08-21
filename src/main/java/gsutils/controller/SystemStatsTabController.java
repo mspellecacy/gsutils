@@ -4,6 +4,7 @@ import gsutils.core.OutputOption;
 import gsutils.gscore.*;
 import gsutils.monitor.HostMonitor;
 import gsutils.service.GameSenseService;
+import gsutils.service.OLEDRotationService;
 import gsutils.service.PreferencesService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -32,15 +33,15 @@ import java.util.ResourceBundle;
  */
 public class SystemStatsTabController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(SystemStatsTabController.class);
-
+    private static final String EVENT_NAME = "SYSTEM";
     private static boolean runMonitor = false;
 
     private final GameSenseService gsService = GameSenseService.INSTANCE;
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
     private final ObservableList<OutputOption> outputOptions = FXCollections.observableArrayList();
 
-    private StatsUpdateService statsUpdateService = new StatsUpdateService();
-    private GSEventService gsEventsService = new GSEventService(); //TODO: This naming convention kludge needs a rethink
+    private final StatsUpdateService statsUpdateService = new StatsUpdateService();
+    private final GSEventService gsEventService = new GSEventService(); //TODO: This naming convention kludge needs a rethink
 
     @FXML
     private TableView<OutputOption> systemStatsTable;
@@ -61,18 +62,19 @@ public class SystemStatsTabController implements Initializable {
         log.debug("System Monitor Starting");
         registerEvent();
 
-        //Setup our services, each firing once a second...
-        statsUpdateService.setPeriod(Duration.seconds(1));
-        statsUpdateService.start();
-        gsEventsService.setPeriod(Duration.seconds(1));
-        gsEventsService.start();
-
         if (prefsService.getUserPrefs().getSystemStatsString() == null) {
             outputString.setText("MEMUSED_PCT%");
         } else outputString.setText(prefsService.getUserPrefs().getSystemStatsString());
 
         if (prefsService.getUserPrefs().getSystemStatsOn() != null && prefsService.getUserPrefs().getSystemStatsOn())
             toggleServiceButton.fire();
+
+        //Setup our services, each firing once a second...
+        statsUpdateService.setPeriod(Duration.seconds(1));
+
+        gsEventService.setPeriod(Duration.seconds(1));
+        gsEventService.setOnCancelled(event -> OLEDRotationService.INSTANCE.unregisterGameEvent(EVENT_NAME));
+        gsEventService.setOnScheduled(event -> OLEDRotationService.INSTANCE.registerGameEvent(EVENT_NAME));
 
         systemStatsTable.setItems(outputOptions);
     }
@@ -82,7 +84,7 @@ public class SystemStatsTabController implements Initializable {
         //Register the new event Weather provides.
         GSEventRegistration eventReg = new GSEventRegistration();
         eventReg.setGame("GSUTILS");
-        eventReg.setEvent("SYSTEM");
+        eventReg.setEvent(EVENT_NAME);
         gsService.registerGameEvent(eventReg);
 
         // Now bind event...
@@ -112,9 +114,13 @@ public class SystemStatsTabController implements Initializable {
         if (runMonitor) {
             toggleServiceButton.setSelected(true);
             toggleServiceButton.setText("ON");
+            gsEventService.restart();
+            statsUpdateService.restart();
         } else {
             toggleServiceButton.setSelected(false);
             toggleServiceButton.setText("OFF");
+            gsEventService.cancel();
+            statsUpdateService.cancel();
         }
 
         log.info("Stats Monitoring Service Running: " + runMonitor);
@@ -174,7 +180,7 @@ public class SystemStatsTabController implements Initializable {
             return new Task<Void>() {
                 protected Void call() throws Exception {
                     updateMetrics();
-                    Platform.runLater(() -> updatePreviewLabel());
+                    Platform.runLater(SystemStatsTabController.this::updatePreviewLabel);
                     return null;
                 }
             };
@@ -215,12 +221,14 @@ public class SystemStatsTabController implements Initializable {
                         //Setup our GameSense event
                         GSGameEvent gsEvent = new GSGameEvent();
                         gsEvent.setGame("GSUTILS");
-                        gsEvent.setEvent("SYSTEM");
+                        gsEvent.setEvent(EVENT_NAME);
                         gsEvent.setData(outputMap);
 
                         //Push Game Sense event
-                        gsService.queueGameEvent(gsEvent, 1000);
+                        OLEDRotationService.INSTANCE.queueOLEDEvent(gsEvent);
 
+                    } else {
+                        this.cancel();
                     }
 
                     //Return nothing/void

@@ -14,7 +14,6 @@ public class UserTimedEvent {
     private Integer repeat;
     private Integer interval;  //In Seconds...
     private Boolean enabled;
-    private String eventName;
 
     public UserTimedEvent() {
     }
@@ -108,7 +107,6 @@ public class UserTimedEvent {
     }
 
     public void setEventName(String eventName) {
-        this.eventName = eventName;
         this.gameEvent.setEvent(eventName);
     }
 

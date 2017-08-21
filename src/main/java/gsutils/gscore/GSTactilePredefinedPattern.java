@@ -132,7 +132,7 @@ public enum GSTactilePredefinedPattern implements GSPattern {
     SMOOTHHUM4NOKICKORBRAKEPULSE_20("ti_predefined_smoothhum4nokickorbrakepulse_20"),
     SMOOTHHUM5NOKICKORBRAKEPULSE_10("ti_predefined_smoothhum5nokickorbrakepulse_10");
 
-    private String patternName;
+    private final String patternName;
 
     GSTactilePredefinedPattern(String patternName) {
         this.patternName = patternName;

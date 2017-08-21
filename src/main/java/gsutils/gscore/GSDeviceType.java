@@ -26,7 +26,7 @@ public enum GSDeviceType {
     TACTILE("tactile"),
     SCREENED("screened-128x36");
 
-    private String deviceTypeName;
+    private final String deviceTypeName;
 
     GSDeviceType(String deviceTypeName) {
         this.deviceTypeName = deviceTypeName;

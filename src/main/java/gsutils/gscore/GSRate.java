@@ -3,7 +3,7 @@ package gsutils.gscore;
 /**
  * Created by mspellecacy on 7/9/2016.
  */
-public class GSRate {
+class GSRate {
     private Integer frequency;
     private Integer repeat_limit;
 

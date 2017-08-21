@@ -1,12 +1,9 @@
 package gsutils.gscore;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * Created by mspellecacy on 6/14/2016.
@@ -26,9 +23,6 @@ public class GSScreenedEventHandler implements GSEventHandler {
         return GSScreenedZones.ONE;
     }
 
-    @JsonProperty("mode")
-    private String mode;
-
     //This is really the meat.
     private ArrayList datas;
 
@@ -38,10 +32,6 @@ public class GSScreenedEventHandler implements GSEventHandler {
 
     public String getMode() {
         return "screen";
-    }
-
-    public void setMode(String mode) {
-        this.mode = mode;
     }
 
     @JsonProperty("datas")

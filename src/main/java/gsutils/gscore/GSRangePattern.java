@@ -3,7 +3,7 @@ package gsutils.gscore;
 /**
  * Created by mspellecacy on 7/10/2016.
  */
-public class GSRangePattern implements GSPattern {
+class GSRangePattern implements GSPattern {
 
     private Integer low;
     private Integer high;

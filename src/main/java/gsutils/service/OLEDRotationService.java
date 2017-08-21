@@ -1,0 +1,90 @@
+package gsutils.service;
+
+import gsutils.gscore.GSGameEvent;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.stream.Stream;
+
+/**
+ * Created by mspellecacy on 8/18/2017.
+ */
+public enum OLEDRotationService {
+    INSTANCE;
+
+    private final OLEDEventRotationService oledEventRotationService = new OLEDEventRotationService();
+    private final GameSenseService gameSenseService = GameSenseService.INSTANCE;
+    private final Logger log = LoggerFactory.getLogger(OLEDRotationService.class);
+
+    OLEDRotationService() {
+        init();
+    }
+
+    public void registerGameEvent(String gameEvent) {
+
+        if (!oledEventRotationService.eventOutputOptions.contains(gameEvent)) {
+            log.info("Registering OLED Event: {}", gameEvent);
+            oledEventRotationService.eventOutputOptions.add(gameEvent);
+            log.info("Current Output Options: {}", oledEventRotationService.eventOutputOptions);
+        }
+
+    }
+
+    public void unregisterGameEvent(String gameEvent) {
+        log.debug("Unregistering OLED Event: {}", gameEvent);
+        oledEventRotationService.eventOutputOptions.remove(gameEvent);
+    }
+
+    public void queueOLEDEvent(GSGameEvent event) {
+        oledEventRotationService.oledEventQueue.add(event);
+        log.debug("Queued Event: {} QueueSize {}", new Object[]{event.getEvent(), oledEventRotationService.oledEventQueue.size()});
+
+    }
+
+    private void init() {
+        log.info("OLED Rotation Service Starting...");
+
+        oledEventRotationService.setOnFailed(e -> {
+            log.info("OLED Rotation Failed...restarting...");
+            oledEventRotationService.restart();
+        });
+
+        oledEventRotationService.start();
+    }
+
+    private class OLEDEventRotationService extends Service<Void> {
+
+        final Queue<GSGameEvent> oledEventQueue = new ArrayBlockingQueue<>(10);
+        final List<String> eventOutputOptions = new ArrayList<>();
+        private final int oledRotationIntervalSeconds = 3;
+        private LocalDateTime lastRotationTime = LocalDateTime.now();
+
+        protected Task<Void> createTask() {
+            return new Task<Void>() {
+                protected Void call() throws Exception {
+                    Stream.generate(oledEventQueue::poll)
+                            .filter(Objects::nonNull)
+                            .forEach(e -> {
+                                if (Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
+                                    gameSenseService.sendGameEvent(e);
+                                }
+                                if (LocalDateTime.now().isAfter(lastRotationTime.plusSeconds(oledRotationIntervalSeconds))) {
+                                    lastRotationTime = LocalDateTime.now();
+                                    Collections.rotate(eventOutputOptions, -1);
+                                }
+                                if (!Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
+                                    log.debug(e.getEvent() + " Event Ignored.");
+                                }
+                            });
+                    return null;
+                }
+
+            };
+        }
+    }
+}

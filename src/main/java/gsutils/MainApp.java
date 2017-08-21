@@ -58,6 +58,7 @@ public class MainApp extends Application {
         // Setups a way for us to open the user's browser for showing them docs.
         HostServicesService.INSTANCE.init(getHostServices());
 
+
         //When the main app stage closes, shut down all the things. ALL THE THINGS!
         stage.setOnCloseRequest(e -> {
             Platform.exit();

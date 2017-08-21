@@ -5,6 +5,7 @@ import gsutils.gscore.*;
 import gsutils.monitor.WeatherMonitor;
 import gsutils.service.GameSenseService;
 import gsutils.service.HostServicesService;
+import gsutils.service.OLEDRotationService;
 import gsutils.service.PreferencesService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -20,22 +21,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * Created by mspellecacy on 6/12/2016.
  */
 public class WeatherTabController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(WeatherTabController.class);
+    private static final String EVENT_NAME = "WEATHER";
 
     private final ObservableList<OutputOption> outputOptions = FXCollections.observableArrayList();
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
     private final GameSenseService gsService = GameSenseService.INSTANCE;
-    private GSEventService gsEventService = new GSEventService();
-    private WeatherUpdateService wus = new WeatherUpdateService();
+    private final GSEventService gsEventService = new GSEventService();
+    private final WeatherUpdateService wus = new WeatherUpdateService();
     private Boolean runMonitor = false;
     private WeatherMonitor weatherMonitor;
 
@@ -61,15 +60,7 @@ public class WeatherTabController implements Initializable {
         log.debug("Weather Controller Starting");
 
         wus.setPeriod(Duration.seconds(10)); //Weather changes relatively slowly, so don't hammer the API
-        wus.start();
-
-        gsEventService.setPeriod(Duration.seconds(1));
-
-        owmApiKeyField.setText(prefsService.getUserPrefs().getOpenWeatherMapApiKey());
-        weatherUnits.getItems().setAll(WeatherMonitor.WeatherUnit.values());
-        weatherUnits.setValue(WeatherMonitor.WeatherUnit.IMPERIAL);
-        zipcodeField.setText(prefsService.getUserPrefs().getWeatherZipcodeString());
-        weatherStatsTable.setItems(outputOptions);
+        wus.setOnFailed(e -> wus.restart());
 
         if (prefsService.getUserPrefs().getRunWeatherMonitor() != null && prefsService.getUserPrefs().getRunWeatherMonitor())
             toggleServiceButton.fire();
@@ -80,6 +71,17 @@ public class WeatherTabController implements Initializable {
             outputString.setText("TEMP_CURF | WEAT_CON");
         }
 
+        gsEventService.setPeriod(Duration.seconds(1));
+        gsEventService.setOnCancelled(event -> OLEDRotationService.INSTANCE.unregisterGameEvent(EVENT_NAME));
+        gsEventService.setOnScheduled(event -> OLEDRotationService.INSTANCE.registerGameEvent(EVENT_NAME));
+
+        owmApiKeyField.setText(prefsService.getUserPrefs().getOpenWeatherMapApiKey());
+        weatherUnits.getItems().setAll(WeatherMonitor.WeatherUnit.values());
+        weatherUnits.setValue(WeatherMonitor.WeatherUnit.IMPERIAL);
+        zipcodeField.setText(prefsService.getUserPrefs().getWeatherZipcodeString());
+        weatherStatsTable.setItems(outputOptions);
+
+
         registerEvent();
         startMonitor();
     }
@@ -89,13 +91,13 @@ public class WeatherTabController implements Initializable {
         //Register the new event Weather provides.
         GSEventRegistration eventReg = new GSEventRegistration();
         eventReg.setGame("GSUTILS");
-        eventReg.setEvent("WEATHER");
+        eventReg.setEvent(EVENT_NAME);
         gsService.registerGameEvent(eventReg);
 
         // Now bind event...
         GSBindEvent bindEvent = new GSBindEvent();
         bindEvent.setGame("GSUTILS");
-        bindEvent.setEvent("WEATHER");
+        bindEvent.setEvent(EVENT_NAME);
 
         //Basic Datas Map...
         ArrayList<HashMap<String, Object>> dataFrames = new ArrayList<>();
@@ -114,71 +116,19 @@ public class WeatherTabController implements Initializable {
     }
 
     private void startMonitor() {
-        if (owmApiKeyField.getText() == "" && prefsService.getUserPrefs().getOpenWeatherMapApiKey() == null) {
+        if (Objects.equals(owmApiKeyField.getText(), "") && prefsService.getUserPrefs().getOpenWeatherMapApiKey() == null) {
             log.info("No default api key found.");
 
         } else {
             log.info("OWM Api Key: {}", prefsService.getUserPrefs().getOpenWeatherMapApiKey());
             weatherMonitor = new WeatherMonitor(prefsService.getUserPrefs().getOpenWeatherMapApiKey());
-            if (runMonitor) gsEventService.restart();
+
         }
 
 
     }
 
     private void updateWeather() {
-        HashMap<String, Object> weatherObj = new HashMap<>();
-
-        if (runMonitor) {
-
-            //Go fetch our Weather data...
-            weatherObj = (HashMap<String, Object>) weatherMonitor.getWeatherByZip(zipcodeField.getText(), weatherUnits.getValue());
-
-            //If we got something back from the OWM API...
-            if (!weatherObj.isEmpty() && !weatherObj.get("cod").equals(401)) {
-
-                //Cast our returned weather data in to usable objects
-                HashMap<String, Object> weatherTemps = (HashMap<String, Object>) weatherObj.get("main");
-                HashMap<String, Object> windStats = (HashMap<String, Object>) weatherObj.get("wind");
-                //Not really sure why the api treats the 'weather' return values as a Array, but whatever. DOUBLE CASTING!!
-                HashMap<String, Object> weatherConds = (HashMap<String, Object>) ((ArrayList<Object>) weatherObj.get("weather")).get(0);
-
-                //Clear out any stale data
-                outputOptions.clear();
-
-                //Add all of the variables we wish to provide our user for output.
-                outputOptions.setAll(
-                        new OutputOption("Weather Conditions",
-                                String.valueOf(weatherConds.get("main")),
-                                "WEAT_CON"),
-                        new OutputOption("Current Temp",
-                                String.valueOf(weatherTemps.get("temp")),
-                                "TEMP_CUR"),
-                        new OutputOption("Day's High",
-                                String.valueOf(weatherTemps.get("temp_max")),
-                                "TEMP_MAX"),
-                        new OutputOption("Day's Low",
-                                String.valueOf(weatherTemps.get("temp_min")),
-                                "TEMP_MIN"),
-                        new OutputOption("Humidity in Percent",
-                                String.valueOf(weatherTemps.get("humidity")),
-                                "TEMP_HUM"),
-                        new OutputOption("Pressure in hPa",
-                                String.valueOf(weatherTemps.get("pressure")),
-                                "TEMP_PRS"),
-                        new OutputOption("Wind Speed",
-                                String.valueOf(windStats.get("speed")),
-                                "WIND_SPD"),
-                        new OutputOption("Wind Dir (in Deg)",
-                                String.valueOf(windStats.get("deg")),
-                                "WIND_DIR"),
-                        new OutputOption("Wind Gust Speed",
-                                String.valueOf(windStats.get("gust")),
-                                "WIND_GST")
-                );  //end .setAll(...)
-            }
-        }
-
 
     }
 
@@ -200,10 +150,12 @@ public class WeatherTabController implements Initializable {
             toggleServiceButton.setSelected(true);
             toggleServiceButton.setText("ON");
             gsEventService.restart();
+            wus.restart();
         } else {
             toggleServiceButton.setSelected(false);
             toggleServiceButton.setText("OFF");
             gsEventService.cancel();
+            wus.cancel();
         }
 
         log.info("Weather Monitoring Service Running: " + runMonitor);
@@ -226,13 +178,62 @@ public class WeatherTabController implements Initializable {
         protected Task<Void> createTask() {
             return new Task<Void>() {
                 protected Void call() throws Exception {
-                    updateWeather();
+                    HashMap<String, Object> weatherObj = new HashMap<>();
+
+                    //Go fetch our Weather data...
+                    weatherObj = (HashMap<String, Object>) weatherMonitor.getWeatherByZip(zipcodeField.getText(), weatherUnits.getValue());
+                    //If we got something back from the OWM API...
+                    if (!weatherObj.isEmpty() && !weatherObj.get("cod").equals(401)) {
+                        //Cast our returned weather data in to usable objects
+                        HashMap<String, Object> weatherTemps = (HashMap<String, Object>) weatherObj.get("main");
+                        HashMap<String, Object> windStats = (HashMap<String, Object>) weatherObj.get("wind");
+                        //Not really sure why the api treats the 'weather' return values as a Array, but whatever. DOUBLE CASTING!!
+                        HashMap<String, Object> weatherConds = (HashMap<String, Object>) ((ArrayList<Object>) weatherObj.get("weather")).get(0);
+
+                        //Clear out any stale data
+                        outputOptions.clear();
+
+                        //Add all of the variables we wish to provide our user for output.
+                        outputOptions.setAll(
+                                new OutputOption("Weather Conditions",
+                                        String.valueOf(weatherConds.get("main")),
+                                        "WEAT_CON"),
+                                new OutputOption("Current Temp",
+                                        String.valueOf(weatherTemps.get("temp")),
+                                        "TEMP_CUR"),
+                                new OutputOption("Day's High",
+                                        String.valueOf(weatherTemps.get("temp_max")),
+                                        "TEMP_MAX"),
+                                new OutputOption("Day's Low",
+                                        String.valueOf(weatherTemps.get("temp_min")),
+                                        "TEMP_MIN"),
+                                new OutputOption("Humidity in Percent",
+                                        String.valueOf(weatherTemps.get("humidity")),
+                                        "TEMP_HUM"),
+                                new OutputOption("Pressure in hPa",
+                                        String.valueOf(weatherTemps.get("pressure")),
+                                        "TEMP_PRS"),
+                                new OutputOption("Wind Speed",
+                                        String.valueOf(windStats.get("speed")),
+                                        "WIND_SPD"),
+                                new OutputOption("Wind Dir (in Deg)",
+                                        String.valueOf(windStats.get("deg")),
+                                        "WIND_DIR"),
+                                new OutputOption("Wind Gust Speed",
+                                        String.valueOf(windStats.get("gust")),
+                                        "WIND_GST")
+                        );  //end .setAll(...)
+                    } else {
+                        log.info("Error Retrieving Weather: {}", weatherObj.get("cod").equals(404));
+                    }
+
                     updatePreviewLabel();
                     return null;
                 }
             };
         }
     }
+
 
     private class GSEventService extends ScheduledService<Void> {
         protected Task<Void> createTask() {
@@ -265,11 +266,11 @@ public class WeatherTabController implements Initializable {
                     //Setup our GameSense event
                     GSGameEvent gsEvent = new GSGameEvent();
                     gsEvent.setGame("GSUTILS");
-                    gsEvent.setEvent("WEATHER");
+                    gsEvent.setEvent(EVENT_NAME);
                     gsEvent.setData(outputMap);
 
                     //Push Game Sense event
-                    gsService.queueGameEvent(gsEvent, 1000);
+                    OLEDRotationService.INSTANCE.queueOLEDEvent(gsEvent);
 
                     return null;
                 }

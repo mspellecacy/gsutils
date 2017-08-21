@@ -3,7 +3,7 @@ package gsutils.gscore;
 /**
  * Created by mspellecacy on 7/10/2016.
  */
-public class GSRangeRepeatLimit implements GSPattern {
+class GSRangeRepeatLimit implements GSPattern {
 
     private Integer low;
     private Integer high;

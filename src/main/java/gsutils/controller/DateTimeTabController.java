@@ -3,6 +3,7 @@ package gsutils.controller;
 import gsutils.gscore.*;
 import gsutils.service.GameSenseService;
 import gsutils.service.HostServicesService;
+import gsutils.service.OLEDRotationService;
 import gsutils.service.PreferencesService;
 import javafx.application.Platform;
 import javafx.concurrent.ScheduledService;
@@ -30,12 +31,14 @@ import java.util.ResourceBundle;
  */
 public class DateTimeTabController implements Initializable {
     private static final Logger log = LoggerFactory.getLogger(DateTimeTabController.class);
+    private static final String EVENT_NAME = "DATETIME";
+
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
     private final GameSenseService gsService = GameSenseService.INSTANCE;
+    private final OLEDRotationService oledRotationService = OLEDRotationService.INSTANCE;
 
-
-    private GSEventService gsEventService = new GSEventService();
-    private PreviewUpdateService previewUpdateService = new PreviewUpdateService();
+    private final GSEventService gsEventService = new GSEventService();
+    private final PreviewUpdateService previewUpdateService = new PreviewUpdateService();
 
     @FXML
     private TextField dateTimePattern;
@@ -62,6 +65,9 @@ public class DateTimeTabController implements Initializable {
         }
 
         gsEventService.setPeriod(Duration.seconds(1));
+        gsEventService.setOnCancelled(event -> oledRotationService.unregisterGameEvent(EVENT_NAME));
+        gsEventService.setOnScheduled(event -> oledRotationService.registerGameEvent(EVENT_NAME));
+
         previewUpdateService.setPeriod(Duration.seconds(1));
         previewUpdateService.start();
 
@@ -71,13 +77,13 @@ public class DateTimeTabController implements Initializable {
         //Register the new event Date/Time provides.
         GSEventRegistration eventReg = new GSEventRegistration();
         eventReg.setGame("GSUTILS");
-        eventReg.setEvent("DATETIME");
+        eventReg.setEvent(EVENT_NAME);
         gsService.registerGameEvent(eventReg);
 
         // Now bind event...
         GSBindEvent bindEvent = new GSBindEvent();
         bindEvent.setGame("GSUTILS");
-        bindEvent.setEvent("DATETIME");
+        bindEvent.setEvent(EVENT_NAME);
 
         //Basic Datas Map...
         ArrayList<HashMap<String, Object>> dataFrames = new ArrayList<>();
@@ -94,7 +100,7 @@ public class DateTimeTabController implements Initializable {
     }
 
     private String getDateTimeString() {
-        String output = "ERR";
+        String output;
         try {
             LocalDateTime date = LocalDateTime.now();
             String pattern = (dateTimePattern.getText().isEmpty()) ? "dd/MM H:mm:ss" : dateTimePattern.getText();
@@ -141,7 +147,7 @@ public class DateTimeTabController implements Initializable {
         protected Task<Void> createTask() {
             return new Task<Void>() {
                 protected Void call() throws Exception {
-                    Platform.runLater(() -> updatePreviewLabel());
+                    Platform.runLater(DateTimeTabController.this::updatePreviewLabel);
                     return null;
                 }
             };
@@ -149,6 +155,7 @@ public class DateTimeTabController implements Initializable {
     }
 
     private class GSEventService extends ScheduledService<Void> {
+
         protected Task<Void> createTask() {
             return new Task<Void>() {
                 protected Void call() throws Exception {
@@ -177,14 +184,14 @@ public class DateTimeTabController implements Initializable {
                     //Setup our GameSense event
                     GSGameEvent gsEvent = new GSGameEvent();
                     gsEvent.setGame("GSUTILS");
-                    gsEvent.setEvent("DATETIME");
+                    gsEvent.setEvent(EVENT_NAME);
                     gsEvent.setData(outputMap);
 
                     //Push Game Sense event
-                    gsService.queueGameEvent(gsEvent, 1000);
+                    oledRotationService.queueOLEDEvent(gsEvent);
 
                     //Update our preview regardless.
-                    Platform.runLater(() -> updatePreviewLabel());
+                    Platform.runLater(DateTimeTabController.this::updatePreviewLabel);
 
                     //Return nothing/Void.
                     return null;

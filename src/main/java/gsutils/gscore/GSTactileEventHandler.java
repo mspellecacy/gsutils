@@ -13,7 +13,6 @@ public class GSTactileEventHandler implements GSEventHandler {
     private GSPattern[] pattern;
     private Integer rate;
     private GSDeviceType deviceType;
-    private String mode;
     private GSTactileZones zone;
 
     public GSTactileEventHandler() {
@@ -31,10 +30,6 @@ public class GSTactileEventHandler implements GSEventHandler {
 
     public String getMode() {
         return "vibrate";
-    }
-
-    public void setMode(String mode) {
-        this.mode = mode;
     }
 
     public GSPattern[] getPattern() {
