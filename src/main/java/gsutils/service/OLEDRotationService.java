@@ -7,9 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.stream.Stream;
 
 /**
  * Created by mspellecacy on 8/18/2017.
@@ -32,7 +34,6 @@ public enum OLEDRotationService {
             oledEventRotationService.eventOutputOptions.add(gameEvent);
             log.info("Current Output Options: {}", oledEventRotationService.eventOutputOptions);
         }
-
     }
 
     public void unregisterGameEvent(String gameEvent) {
@@ -59,31 +60,33 @@ public enum OLEDRotationService {
 
     private class OLEDEventRotationService extends Service<Void> {
 
-        final Queue<GSGameEvent> oledEventQueue = new ArrayBlockingQueue<>(10);
+        final ArrayBlockingQueue<GSGameEvent> oledEventQueue = new ArrayBlockingQueue<>(10);
         final List<String> eventOutputOptions = new ArrayList<>();
         private final int oledRotationIntervalSeconds = 3;
         private LocalDateTime lastRotationTime = LocalDateTime.now();
 
         protected Task<Void> createTask() {
-            return new Task<Void>() {
-                protected Void call() throws Exception {
-                    Stream.generate(oledEventQueue::poll)
-                            .filter(Objects::nonNull)
-                            .forEach(e -> {
-                                if (Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
-                                    gameSenseService.sendGameEvent(e);
-                                }
-                                if (LocalDateTime.now().isAfter(lastRotationTime.plusSeconds(oledRotationIntervalSeconds))) {
-                                    lastRotationTime = LocalDateTime.now();
-                                    Collections.rotate(eventOutputOptions, -1);
-                                }
-                                if (!Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
-                                    log.debug(e.getEvent() + " Event Ignored.");
-                                }
-                            });
-                    return null;
-                }
+            Thread.currentThread().setName("OLED Event Rotation Task.");
 
+            return new Task<Void>() {
+                protected Void call() {
+                    while (true) try {
+                        GSGameEvent e = oledEventQueue.take();
+
+                        if (Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
+                            gameSenseService.sendGameEvent(e);
+                        }
+                        if (LocalDateTime.now().isAfter(lastRotationTime.plusSeconds(oledRotationIntervalSeconds))) {
+                            lastRotationTime = LocalDateTime.now();
+                            Collections.rotate(eventOutputOptions, -1);
+                        }
+                        if (!Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
+                            log.debug(e.getEvent() + " Event Ignored.");
+                        }
+                    } catch (InterruptedException ignored) {
+                        // The process will be restart.
+                    }
+                }
             };
         }
     }
