@@ -94,6 +94,7 @@ public class TimersTabController implements Initializable {
     private VBox handlerEditorVBox;
 
 
+    @SuppressWarnings("unchecked")
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 

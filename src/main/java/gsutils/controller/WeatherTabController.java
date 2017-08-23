@@ -122,14 +122,7 @@ public class WeatherTabController implements Initializable {
         } else {
             log.info("OWM Api Key: {}", prefsService.getUserPrefs().getOpenWeatherMapApiKey());
             weatherMonitor = new WeatherMonitor(prefsService.getUserPrefs().getOpenWeatherMapApiKey());
-
         }
-
-
-    }
-
-    private void updateWeather() {
-
     }
 
     private void updatePreviewLabel() {
@@ -170,13 +163,11 @@ public class WeatherTabController implements Initializable {
         prefsService.savePreferences();
     }
 
-    public void unitChange(ActionEvent actionEvent) {
-        //updateWeather();
-    }
-
     private class WeatherUpdateService extends ScheduledService<Void> {
         protected Task<Void> createTask() {
             return new Task<Void>() {
+
+                @SuppressWarnings("unchecked")
                 protected Void call() throws Exception {
                     HashMap<String, Object> weatherObj = new HashMap<>();
 

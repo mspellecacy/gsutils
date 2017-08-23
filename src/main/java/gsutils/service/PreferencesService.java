@@ -36,6 +36,7 @@ public enum PreferencesService {
         loadGameSenseConfig();
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     private Boolean loadPreferences() {
         boolean loadedSuccessfully;
         String prefsDir = ".gsutils";

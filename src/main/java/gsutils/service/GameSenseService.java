@@ -72,6 +72,7 @@ public enum GameSenseService {
         gameSenseHost = host;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public Boolean registerGame(GSGameRegistration gsGameRegistration) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;
@@ -123,7 +124,7 @@ public enum GameSenseService {
         return postSuccess;
     }
 
-
+    @SuppressWarnings("UnusedReturnValue")
     public Boolean sendGameEvent(GSGameEvent gsGameEvent) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;
@@ -147,6 +148,7 @@ public enum GameSenseService {
         return postSuccess;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public Boolean bindGameEvent(GSBindEvent bindEvent) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;
@@ -173,6 +175,7 @@ public enum GameSenseService {
         return postSuccess;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean registerGameEvent(GSEventRegistration gsEventRegistration) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;
@@ -200,6 +203,7 @@ public enum GameSenseService {
         return postSuccess;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean removeGameEvent(GSEventRegistration gsEventRegistration) {
         HttpClient httpClient = HttpClientBuilder.create().build();
         Boolean postSuccess = false;

@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.cell.PropertyValueFactory?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.layout.*?>
 <Tab closable="false" text="Weather" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8"
      fx:controller="gsutils.controller.WeatherTabController">
     <content>
@@ -20,7 +18,7 @@
                     <TextField fx:id="owmApiKeyField" promptText="Go to: http://openweathermap.org/api"
                                HBox.hgrow="ALWAYS"/>
                     <TextField fx:id="zipcodeField" promptText="USA Zipcode"/>
-                    <ComboBox fx:id="weatherUnits" onAction="#unitChange"/>
+                    <ComboBox fx:id="weatherUnits"/>
                 </HBox>
             </top>
             <center>

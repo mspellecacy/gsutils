@@ -69,6 +69,8 @@ public enum OLEDRotationService {
             Thread.currentThread().setName("OLED Event Rotation Task.");
 
             return new Task<Void>() {
+
+                @SuppressWarnings("InfiniteLoopStatement")
                 protected Void call() {
                     while (true) try {
                         GSGameEvent e = oledEventQueue.take();
@@ -81,10 +83,10 @@ public enum OLEDRotationService {
                             Collections.rotate(eventOutputOptions, -1);
                         }
                         if (!Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
-                            log.debug(e.getEvent() + " Event Ignored.");
+                            log.debug("{} Event Ignored.", e.getEvent());
                         }
                     } catch (InterruptedException ignored) {
-                        // The process will be restart.
+                        // The process will be restarted.
                     }
                 }
             };
