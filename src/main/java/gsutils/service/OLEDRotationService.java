@@ -28,7 +28,6 @@ public enum OLEDRotationService {
     }
 
     public void registerGameEvent(String gameEvent) {
-
         if (!oledEventRotationService.eventOutputOptions.contains(gameEvent)) {
             log.info("Registering OLED Event: {}", gameEvent);
             oledEventRotationService.eventOutputOptions.add(gameEvent);
@@ -51,7 +50,7 @@ public enum OLEDRotationService {
         log.info("OLED Rotation Service Starting...");
 
         oledEventRotationService.setOnFailed(e -> {
-            log.info("OLED Rotation Failed...restarting...");
+            log.info("OLED Rotation Failed: {}", e.getSource().getMessage());
             oledEventRotationService.restart();
         });
 
@@ -62,19 +61,20 @@ public enum OLEDRotationService {
 
         final ArrayBlockingQueue<GSGameEvent> oledEventQueue = new ArrayBlockingQueue<>(10);
         final List<String> eventOutputOptions = new ArrayList<>();
-        private final int oledRotationIntervalSeconds = 3;
+        private final int oledRotationIntervalSeconds = 3;  //TODO: Make this a user adjustable parameter.
         private LocalDateTime lastRotationTime = LocalDateTime.now();
 
         protected Task<Void> createTask() {
-            Thread.currentThread().setName("OLED Event Rotation Task.");
 
+            Thread.currentThread().setName("OLED Event Rotation Task");
             return new Task<Void>() {
 
                 @SuppressWarnings("InfiniteLoopStatement")
                 protected Void call() {
                     while (true) try {
-                        GSGameEvent e = oledEventQueue.take();
+                        Thread.currentThread().setName("OLED Event Rotation Loop");
 
+                        GSGameEvent e = oledEventQueue.take();
                         if (Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
                             gameSenseService.sendGameEvent(e);
                         }
@@ -83,10 +83,12 @@ public enum OLEDRotationService {
                             Collections.rotate(eventOutputOptions, -1);
                         }
                         if (!Objects.equals(e.getEvent(), eventOutputOptions.get(0))) {
-                            log.debug("{} Event Ignored.", e.getEvent());
+                            log.debug("Event Ignored: {}", e.getEvent());
                         }
-                    } catch (InterruptedException ignored) {
-                        // The process will be restarted.
+                    } catch (InterruptedException | IllegalStateException e) {
+                        log.info("OLED Event Rotation Service Interrupted: {}", e.getMessage());
+                        Thread.currentThread().interrupt();
+                        this.cancel();
                     }
                 }
             };

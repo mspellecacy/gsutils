@@ -169,10 +169,8 @@ public class WeatherTabController implements Initializable {
 
                 @SuppressWarnings("unchecked")
                 protected Void call() throws Exception {
-                    HashMap<String, Object> weatherObj = new HashMap<>();
-
                     //Go fetch our Weather data...
-                    weatherObj = (HashMap<String, Object>) weatherMonitor.getWeatherByZip(zipcodeField.getText(), weatherUnits.getValue());
+                    HashMap<String, Object> weatherObj = (HashMap<String, Object>) weatherMonitor.getWeatherByZip(zipcodeField.getText(), weatherUnits.getValue());
                     //If we got something back from the OWM API...
                     if (!weatherObj.isEmpty() && !weatherObj.get("cod").equals(401)) {
                         //Cast our returned weather data in to usable objects
