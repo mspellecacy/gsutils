@@ -1,10 +1,10 @@
 # GSUtils
 
-* Don't play CSGO.
-* Don't play DotA2.
-* Don't play Minecraft.
-* Own [Steel Series Rival 700](https://steelseries.com/gaming-mice/rival-700).
-* __Write code.__
+* I don't play CSGO.
+* I don't play DotA2.
+* I don't play Minecraft.
+* I own a [Steel Series Rival 700](https://steelseries.com/gaming-mice/rival-700).
+* I __write code.__
 
 I wanted to put my shiny new toy to some practical use, so I wrote a Java app to push 'game' events, in this case system stats and weather, through the [GameSense Engine](https://github.com/SteelSeries/gamesense-sdk/tree/master/doc/api)'s API to my fancy mouse.
 
@@ -16,8 +16,8 @@ I wanted to put my shiny new toy to some practical use, so I wrote a Java app to
     
 ## Downloads
 * [Windows Installer](http://frakle.com/gsutils/gsutils.exe)
-* [Jar](http://frakle.com/gsutils/gsutils-jar.zip)
-* (Sorry mac, use the jar? Entirely untested on OSX)
+* [Jar](http://frakle.com/gsutils/gsutils-jar.zip) - Already have Java8? Launch using: `gsutils-runner.bat`
+* Sorry mac, use the jar? Entirely untested on OSX so lease contact me if you wish to help out testing. 
  
  Jar requires [JRE8](http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html)  
  
@@ -28,10 +28,17 @@ __You will need:__
  
 __FULL BUILD (with Native bins)__
 ```bash
-$ mvn clean package jfx:native assembly:single
+$ mvn clean package
 ```
 * For .exe builds you need to have [Inno Setup](http://www.jrsoftware.org/isinfo.php) installed. 
 
+## Want to contribute?
+Please feel free to open a ticket, create a fork, or make a pull request. 
+I'm always open to suggestions and recommendations for new features.
+
 #### Notes
 JavaFX is extremely new to me, so I'm fairly certain I'm doing everything wrong. 
+
 Why doesn't Game Sense support linux?
+
+Cheers!

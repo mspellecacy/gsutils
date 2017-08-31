@@ -3,6 +3,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- To Build:
+        $ mvn clean package jfx:native assembly:single
+    -->
+
     <groupId>com.frakle</groupId>
     <artifactId>gsutils</artifactId>
     <name>gsutils</name>
@@ -23,9 +27,7 @@
     </properties>
 
     <build>
-
         <finalName>gsutils</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -44,6 +46,23 @@
                     <vendor>Frakle.com</vendor>
                     <mainClass>gsutils.MainApp</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <!-- required before build-native -->
+                        <id>create-jfxjar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build-jar</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>create-native</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>build-native</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -54,14 +73,20 @@
                         <descriptor>src/assembly/win-native.xml</descriptor>
                     </descriptors>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
-
     </build>
 
-
     <dependencies>
-
         <!-- Jackson, JSON/XML -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -83,7 +108,7 @@
             <version>8.40.10</version>
         </dependency>
 
-        <!-- Add event more components to JavaFX -->
+        <!-- And even more components to JavaFX -->
         <dependency>
             <groupId>org.jfxtras</groupId>
             <artifactId>jfxtras-all</artifactId>

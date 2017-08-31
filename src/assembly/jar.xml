@@ -6,6 +6,11 @@
     <formats>
         <format>zip</format>
     </formats>
+    <files>
+        <file>
+            <source>${basedir}\src\main\deploy\package\windows\gsutils-runner.bat</source>
+        </file>
+    </files>
     <fileSets>
         <fileSet>
             <directory>${basedir}/target/jfx/app</directory>
