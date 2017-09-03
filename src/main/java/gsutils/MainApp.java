@@ -9,15 +9,19 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 public class MainApp extends Application {
 
     private static final String APP_NAME = "GSUtils";
     private static final String BUILD_NAME = "Moby Dick";
+    private static final Image APP_ICON = new Image(MainApp.class.getResourceAsStream("/images/gsutils.png"));
     private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+
 
     private final GameSenseService gsService = GameSenseService.INSTANCE;
     private final PreferencesService prefsService = PreferencesService.INSTANCE;
@@ -51,6 +55,7 @@ public class MainApp extends Application {
         log.debug("Showing JFX scene");
         Scene scene = new Scene(rootNode, 800, 600);
         scene.getStylesheets().add("/styles/styles.css");
+        stage.getIcons().add(APP_ICON);
         stage.setTitle(APP_NAME + " - Build: " + BUILD_NAME + " - GameSense Endpoint: " + gsService.getGameSenseHost());
         stage.setScene(scene);
         stage.show();
