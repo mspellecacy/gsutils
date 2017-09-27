@@ -20,6 +20,7 @@ public class UserPreferences {
     private String datetimePattern;
     private Boolean runUserTimedEvents;
     private ArrayList<UserTimedEvent> userTimedEvents;
+    private Integer oledRotationInterval;
 
     public UserPreferences() {
     }
@@ -118,5 +119,13 @@ public class UserPreferences {
 
     public void setUserTimedEvents(ArrayList<UserTimedEvent> userTimedEvents) {
         this.userTimedEvents = userTimedEvents;
+    }
+
+    public Integer getOledRotationInterval() {
+        return oledRotationInterval;
+    }
+
+    public void setOledRotationInterval(Integer oledRotationInterval) {
+        this.oledRotationInterval = oledRotationInterval;
     }
 }

@@ -59,7 +59,7 @@ public class WeatherTabController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         log.debug("Weather Controller Starting");
 
-        wus.setPeriod(Duration.seconds(10)); //Weather changes relatively slowly, so don't hammer the API
+        wus.setPeriod(Duration.seconds(600)); //Weather changes relatively slowly, so don't hammer the API
         wus.setOnFailed(e -> wus.restart());
 
         if (prefsService.getUserPrefs().getRunWeatherMonitor() != null && prefsService.getUserPrefs().getRunWeatherMonitor())

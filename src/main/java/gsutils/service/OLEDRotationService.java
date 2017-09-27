@@ -19,9 +19,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 public enum OLEDRotationService {
     INSTANCE;
 
+    private final Logger log = LoggerFactory.getLogger(OLEDRotationService.class);
     private final OLEDEventRotationService oledEventRotationService = new OLEDEventRotationService();
     private final GameSenseService gameSenseService = GameSenseService.INSTANCE;
-    private final Logger log = LoggerFactory.getLogger(OLEDRotationService.class);
+    private final PreferencesService preferencesService = PreferencesService.INSTANCE;
 
     OLEDRotationService() {
         init();
@@ -46,8 +47,24 @@ public enum OLEDRotationService {
 
     }
 
+    //TODO: Seem kinda redundant? Better to let the service manage itself over giving direct access to controllers.
+    public int getIntervalSeconds() {
+        return oledEventRotationService.getOledRotationIntervalSeconds();
+    }
+
+    public void setIntervalSeconds(int interval) {
+        oledEventRotationService.setOledRotationIntervalSeconds(interval);
+    }
+
     private void init() {
         log.info("OLED Rotation Service Starting...");
+
+        //Set our rotation interval based on saved preferences, otherwise give a default value of 3 seconds.
+        if (preferencesService.getUserPrefs().getOledRotationInterval() != null) {
+            oledEventRotationService.setOledRotationIntervalSeconds(preferencesService.getUserPrefs().getOledRotationInterval());
+        } else {
+            oledEventRotationService.setOledRotationIntervalSeconds(3);
+        }
 
         oledEventRotationService.setOnFailed(e -> {
             log.info("OLED Rotation Failed: {}", e.getSource().getMessage());
@@ -61,8 +78,16 @@ public enum OLEDRotationService {
 
         final ArrayBlockingQueue<GSGameEvent> oledEventQueue = new ArrayBlockingQueue<>(10);
         final List<String> eventOutputOptions = new ArrayList<>();
-        private final int oledRotationIntervalSeconds = 3;  //TODO: Make this a user adjustable parameter.
+        private int oledRotationIntervalSeconds = 3;
         private LocalDateTime lastRotationTime = LocalDateTime.now();
+
+        public int getOledRotationIntervalSeconds() {
+            return oledRotationIntervalSeconds;
+        }
+
+        public void setOledRotationIntervalSeconds(int oledRotationIntervalSeconds) {
+            this.oledRotationIntervalSeconds = oledRotationIntervalSeconds;
+        }
 
         protected Task<Void> createTask() {
 

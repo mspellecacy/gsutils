@@ -5,6 +5,7 @@
         <fx:include fx:id="dateTimeTab" source="/fxml/datetimeTab.fxml"/>
         <fx:include fx:id="systemStatsTab" source="/fxml/systemStatsTab.fxml"/>
         <fx:include fx:id="weatherTab" source="/fxml/weatherTab.fxml"/>
+        <fx:include fx:id="oledManagementTab" source="/fxml/oledManagement.fxml"/>
         <fx:include fx:id="preferencesTab" source="/fxml/newTab.fxml"/>
     </tabs>
 </TabPane>
