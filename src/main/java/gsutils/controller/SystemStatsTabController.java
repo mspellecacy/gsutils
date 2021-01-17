@@ -149,6 +149,11 @@ public class SystemStatsTabController implements Initializable {
                             String.format("%3.2f", HostMonitor.getSystemCpuLoad()),
                             "CPULOAD_PCT"),
 
+                    //---CPULOAD_ALT
+                    new OutputOption("CPU Load Alt",
+                            String.format("%3.2f", HostMonitor.getSystemCpuLoadAlt()),
+                            "CPULOAD_ALT"),
+
                     //---MEMUSED_PCT
                     new OutputOption("Memory Used Percent",
                             String.format("%3.2f", HostMonitor.getMemoryUsedPercent()),
@@ -167,8 +172,28 @@ public class SystemStatsTabController implements Initializable {
                     //---MEMTTL_GB
                     new OutputOption("Memory Total Gigabytes",
                             String.format("%1.2f", (double) HostMonitor.getTotalMemory() / 1024 / 1024 / 1024),
-                            "MEMTTL_GB")
-            );
+                            "MEMTTL_GB"),
+
+                    //---OS_NAME
+                    new OutputOption("OS Name",
+                    String.format("%s", HostMonitor.getOsName()),
+                    "OS_NAME"),
+
+                    //---SYS_NAME
+                    new OutputOption("SYS Arch",
+                    String.format("%s", HostMonitor.getSystemArch()),
+                            "SYS_ARCH"),
+
+                    //---CPULOAD_AVG
+                    new OutputOption("CPU Load Average",
+                            String.format("%3.2f", HostMonitor.getLoadAverageAlt()),
+                            "CPULOAD_AVG"),
+
+                    //---LOADAVG_ALT
+                    new OutputOption("CPU Load Average",
+                            String.format("%3.2f", HostMonitor.getCpuLoadAverage()),
+                            "LOADAVG_ALT")
+                    );
         } catch (Exception e) {
             log.debug("Error updating system stats: {}", e.getMessage());
         }

@@ -1,5 +1,6 @@
 package gsutils.monitor;
 
+import com.sun.management.OperatingSystemMXBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,8 @@ public class HostMonitor {
     private static final Logger log = LoggerFactory.getLogger(HostMonitor.class);
     @SuppressWarnings("CanBeFinal")
     private static MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    private static OperatingSystemMXBean altbean = (com.sun.management.OperatingSystemMXBean) ManagementFactory
+            .getOperatingSystemMXBean();
     @SuppressWarnings("CanBeFinal")
     private static ObjectName osAttrs;
 
@@ -89,6 +92,42 @@ public class HostMonitor {
         AttributeList list = new AttributeList();
         try {
             list = mbs.getAttributes(osAttrs, new String[]{"SystemCpuLoad"});
+        } catch (InstanceNotFoundException | ReflectionException e) {
+            e.printStackTrace();
+        }
+
+        if (list.isEmpty()) return Double.NaN;
+
+        Attribute att = (Attribute) list.get(0);
+        Double value = (Double) att.getValue();
+
+        // usually takes a couple of seconds before we get real values
+        if (value == -1.0) return Double.NaN;
+        // returns a percentage value with 1 decimal point precision
+        return ((int) (value * 1000) / 10.0);
+    }
+
+    public static double getSystemCpuLoadAlt() {
+        double value = altbean.getSystemCpuLoad();
+        return ((int) (value * 1000) / 10.0);
+    }
+
+    public static String getSystemArch() {
+        return altbean.getArch();
+    }
+
+    public static String getOsName() {
+        return altbean.getName();
+    }
+
+    public static double getLoadAverageAlt() {
+        return altbean.getSystemLoadAverage();
+    }
+
+    public static double getCpuLoadAverage() {
+        AttributeList list = new AttributeList();
+        try {
+            list = mbs.getAttributes(osAttrs, new String[]{"SystemLoadAverage"});
         } catch (InstanceNotFoundException | ReflectionException e) {
             e.printStackTrace();
         }
